@@ -76,72 +76,72 @@ def base():
 # ---------------------Main Func-----------------------------------
 def main():
 
-    print("--------------------Main Block-------------------------\n")
+    print("Main Block\n----------------------")
 # creating Emp class obj
-    print("-------------------Creating Obj var a,b,c of Emp Class-----------------------\n")
+    print("Creating Obj var a,b,c of Emp Class\n----------------------")
     a=Emp('surya',1)
     b=Emp('dsp',2)
     c=Emp('krishna',3)
 
 # Class var
-    print("-------------------Class Var Id----------------------\n")
-    print(f"no of obj of Emp : {Emp.id}")
+    print("Class Var Id\n----------------------")
+    print(f"no of obj of Emp : {Emp.id}\n")
 
 # private var
-    print("------------------------Private var----------------------\n")
-    print(f"Emp name of obj a : {a.getName()}")
+    print("Private var\n----------------------")
+    print(f"Emp name of obj a : {a.getName()}\n")
 
 # static method call
-    print("---------------------------Static Method call---------------------\n")
-    print(f"static method : {a.lpa(2000)}")
+    print("Static Method call\n----------------------")
+    print(f"static method : {a.lpa(2000)}\n")
 
 # instnace method call
-    print("--------------------------------Instance Method call-------------------------------\n")
-    print(f"instance method : {a.getDetails('surya')}")
+    print("Instance Method call\n----------------------")
+    print(f"instance method : {a.getDetails('surya')}\n")
 
 # Class Method -> making class var to 0
-    print("------------------------------Class Method call-------------------------------------\n")
-    print(Emp.zeroId())
+    print("Class Method call\n----------------------")
+    print(f"{Emp.zeroId()}\n")
     
 # creating Info class obj
-    print("-----------------------Creating Obj var i of Info Class--------------------------------\n")
+    print("Creating Obj var i of Info Class\n----------------------")
     i = Info('bannu',1,'SSE')
-    print(f"no of obj of i : {Emp.id}")
+    print(f"no of obj of i : {Emp.id}\n")
 
-    print("-------------------------Abs method impl----------------------\n")
-    print(f"{i.getDetails()}")
+    print("Abs method impl\n----------------------")
+    print(f"{i.getDetails()}\n")
     
 # Method over wirtting 
-    print("---------------------Method Overwritting-------------------------------\n")
-    print(f"{i.name_obj()}")
+    print("Method Overwritting\n----------------------")
+    print(f"{i.name_obj()}\n")
 
 # Dunder Metod
     # __str__
-    print("-------------------------DUNDER FUNC-------------------------------\n")
+    print("DUNDER FUNC\n----------------------")
     print(f"a : {a}")
-    print(f"i : {i}")
+    print(f"i : {i}\n")
 
     # __lt__
-    print(f"sal of i is less then a : {i<a}")
+    print(f"sal of i is less then a : {i<a}\n")
 
 # Lambda func
-    print("----------------------------Lambda Func-------------------\n")
-    print(f"{(lambda x,y : "even" if x%2 ==0 else "odd" )(4,2)}" )
+    print("Lambda Func\n----------------------")
+    print(f"{(lambda x,y : "even" if x%2 ==0 else "odd" )(4,2)}\n" )
 
 # Map()
-    print("----------------------------Map Func-------------------\n")
-    print(f"Map func : {list(map(lambda a: f"{a} even" if a%2==0 else f"{a} odd",list([x for x in range(1,11)])))}")
+    print("Map Func\n----------------------")
+    print(f"Map func : {list(map(lambda a: f"{a} even" if a%2==0 else f"{a} odd",list([x for x in range(1,11)])))}\n")
 
 # Filter()
-    print("----------------------------Filter Func-------------------\n")
-    print(f"Filter func : {list(filter(lambda x: 1 if x%2==0 else 0,list([x for x in range(1,11)]) ))}")
+    print("Filter Func\n----------------------")
+    print(f"Filter func : {list(filter(lambda x: 1 if x%2==0 else 0,list([x for x in range(1,11)]) ))}\n")
 
 # Reduce()
-    print("----------------------------Reduce Func-------------------\n")
-    print(f"Reduce func : {reduce(lambda x,y:x+y,list([x for x in range(1,11)]))}")
+    print("Reduce Func\n----------------------")
+    print(f"Reduce func : {reduce(lambda x,y:x+y,list([x for x in range(1,11)]))}\n")
 
 # Decarator func
-    print("-------------------------Decorator--------------------------------\n")
+    print("Decorator\n----------------------")
     base()
 
 # prevention of main code to be not used in-directly
