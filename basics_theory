@@ -2,7 +2,7 @@ PYTHON IDE
 --------------
 ->to print any thing that contains any special notations like \n,\t etc use r before the string
 	print(r'surya\november')   - where r represent raw string
--> to use previous output to the current command use _
+-> in Python IDE to use previous output to the current command use _
 	2+4    - 6
 	_ + 5  - 11
 
