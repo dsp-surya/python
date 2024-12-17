@@ -165,9 +165,19 @@ def main():
     print(f"keyword arg : {sub(b=y,a=x)}")
     print(add(1,2,3,a=1,b=2))
 
+# execption handling
+try:
+
 # prevention of main code to be not used in-directly
-if __name__ == '__main__':
-    main()
-else:
-    print("calling from non main file")
+    if __name__ == '__main__':
+        main()
+    else:
+        print("calling from non main file")
+except ValueError:
+    print("please enter int value")
+except:
+    print("something went wrong")
+finally:
+    print("------------------------Execution successfull------------------------------------")
+
 
