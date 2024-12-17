@@ -1,5 +1,14 @@
 from functools import reduce
 from abc import ABC,abstractmethod
+
+# Function : posi & keyword arg
+def sub(a,b):
+    return a-b
+
+# Function : *args & **kwargs
+def add(*args,**kwargs):
+    return f"*args as tuple : {args}\n**kwargs as dict : {kwargs}"
+
 # Abstract class
 class Emp(ABC):
 
@@ -73,6 +82,7 @@ def Deco(base):
 def base():
     print("this is the base func")
 
+
 # ---------------------Main Func-----------------------------------
 def main():
 
@@ -143,6 +153,17 @@ def main():
 # Decarator func
     print("Decorator\n----------------------")
     base()
+
+# input
+    print("Input\n-----------------------------")
+    x = int(input("enter value for x"))
+    y = int(input("enter value for y"))
+
+# Function
+    print(f"\nFunction\n----------------------")
+    print(f"positional arg : {sub(x,y)}")
+    print(f"keyword arg : {sub(b=y,a=x)}")
+    print(add(1,2,3,a=1,b=2))
 
 # prevention of main code to be not used in-directly
 if __name__ == '__main__':
