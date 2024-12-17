@@ -1,0 +1,361 @@
+
+->to print any thing that contains any special notations like \n,\t etc use r before the string
+	print(r'surya\november')   - where r represent raw string
+-> to use previous output to the current command use _
+	2+4    - 6
+	_ + 5  - 11
+
+input()
+-------
+-> to  assign value to var dynamically use input('<string>')
+
+Note: this input method always give values as string eventhough we given a numeric values. So type conversion need to be done before performing any operations related to numberic values.
+
+Memory
+------
+-> if a var is decl then the value assigned is stored in a memory
+-> The address of the memory can be retrived using 
+		id(<var>)
+-> if more than one var having same data then all those variables will point out to same memory location.
+-> doe to this reason python is said to be more memory effecient.
+-> Values are the objects which have the memory location but not var.
+-> var are tagged to vlaues (object) so all var with same value will have same memory location.
+
+data types
+------------
+-> None  =>  var with no value assigned.
+, Numeric => int, float, complex, bool
+, Lists, tuples, sets, map (dictionary), string,
+ range => range(<starting value>,<ending value>,<interval>)
+ ex: range(2,10,2) => 2,4,6,8  which doesnt include ending  value in range.
+-> to check wether the var stores which data type , we can use 
+		type()
+-> to convert one datatype to another use respective constructore
+	ex: to convert int var to float use float(<var>) similarly for others. But directly it wont retrice the values we must have an interval or use list,tuple,set constructors.
+	
+Operators
+----------
+	1 Arthematic - a//b => int vlaue 
+	2 assignment - a,b,c = v1,v2,v3  - can assign multiple var at a time
+	3 uninary (-) - a = -a (negative value)
+	4 relational
+	5 logical - and, or, not
+	6 bitwise - ~, |, &, ^, << , >>
+  7 membership - IN, NOT IN
+	
+number system conversion
+-------------------------
+	-> bin(number/var) => '0b<binary value>'  - 0b is representation for binary format.
+	-> oct(number/var) => '0o<octal value>'   - 0c
+	-> hex(number/var) => '0x<hex value>'     - 0x
+
+stack rotation (rotation two / rot_two())
+-----------------------------------------
+-> it is useful when we want to swap varibales 
+		a,b = b,a
+
+String Formating & Format specifier
+------------------------------------
+-> To sub val of a  var inside the string with var name we can use string formating as below
+         print(f"here is the code {var : format_specifier}")
+format_specifier = .<num>f -> no of deci place
+               <num> or ><num>   -> places spaces left side to make the var value exactly <num> char
+                                  0<num> -> (zpad)places 0 left side to make the var value exactly <num> char
+                                  <<num>  -> places spaces right side to make the var value exactly <num> char
+                                  ^<num>  -> places spaces left and right side to make the  var value exactly <num> char in the middle
+                                              ,  -> var value( if numeric) seperated by , for 1000 place
+                               <symbol> -> places <symbol> at the left of the var value
+
+NOTE :  you can combine the above format specifiers as shown in below example
+Ex: num = 1234
+      print(f"nunber is {num : +,.2f}  -> +1,234.00
+
+LISTS(mutable)
+------
+-> declaration : <var> = [<val>]
+-> retrieving elements of list is same as arrays
+-> displaying list elements using slicing
+		<var>[<starting_index>,<no of element from staring index>,<skip value>)
+	ex: a = [1,2,3,4,5]
+	print(a[1,4,1] => 1 - staring index value => 2
+	                  4 - no of elements from staring index => 1,2,3,4
+					  1 - sking elements includes staritng index => 0 as 1 represents the starting element so no skipping element
+	output: [2,3,4] => no of elements in output list = 4(value of no of elements from starting index) - 1 (starting index) = 3
+	so from starting index i.e 1 => 2 we will get upto 3 elements i.e 2,3,4
+	
+	ex print(a[1,4,2] => [2,4]
+	here the skippingng vlaue is 2 so from value 2(starting index) we need to count 2 elements including the starting index value i.e 2. so  1 elements will be skipped after starting index element.
+
+-> inbuilt functions for lists are below.
+	append, clear, copy, count, externd, index, insert, pop, remove, reverse, sort
+Note: del is used to delete object
+
+TUPLE(immutable)
+----------------
+-> declaration : <var> = (<val>)
+-> tuple is faster than compared to list
+-> in-built function supported by tuple are index,count
+-> slicing is same as lists
+
+SETS 
+-----
+-> elements are not indexed (not in sequence) i.e if we print the set then the output may not be in smae order as we declared.
+-> duplicates are removed.
+-> built-in functions : add, clear, copy, difference, difference_update, discard, intersection, intersection_update, isdisjoint, issubset, issuperset
+	,sysmetric_difference, sysmetric_difference_update, pop, union, update, remove
+
+Dictionary
+----------
+-> decl : <var> = {key : value}
+-> we can use lists, tuples, sets inside a dictionary as values for a key.
+-> we can avoid error whenever we try to retrive a key tht is not present in the dictionary by using get()
+	d.get(<key>,'string') => '<string>' - if key is not present
+	d.get(<key>) => none 
+	
+-> built-in functions : get, values, keys, fromkeys, clear, copy, items, pop, popitems, setdefault, update
+
+NOTE: other way to creating lists, tuples, sets & dict is by using respective constructore i.e list(<values>/ existing set/tuple), dict({<key>:<value>}), set(<values>/ list/tuple), tuple(<values>/ list/set)
+
+LIST COMPREHNSION
+--------+--------------
+it will return  list by iterating through a iterable followed by a if condition (optional)
+
+var = [expression for i in iterable if cond]
+
+Ex: lst =  [i for i in ramge(1,6) if i%2 ==0]
+
+Match - Case stmt
+---------------------
+It is same as a switch
+
+match var or val or expr:
+      case <val> or <expr>:
+            return 
+      .
+      .
+      case _:
+            return
+
+NOTE: case _ -> else (not matched)
+
+
+Function
+---------
+def func(arg1,arg2,*args,**kwargs):
+    print('postional args = ',arg1,arg2,end=",")
+
+    print('packing positional args as tuple using *args')
+    for i in args:
+        print(i)
+
+    print('packing keyword args as diction using **kwargs')
+    for key,value in kwargs.items():
+        print(value)
+
+func(1,2,3,4,5,6,name='surya',id='123')
+
+OUTPUT:
+postional args =  1,2
+packing positional args as tuple using *args
+3
+4
+5
+6
+packing keyword args as diction using **kwargs
+surya
+123
+
+import
+-------
+-> import <module>  or import <module> as <alisa>
+-> to import only specific functions from a module 
+	from <module> import <func>,<func2>
+	- in this case while using the function we dont need to mention like <module>.<fun>
+	ex : from math import sqrt,floor
+		we can directly use floor(<num>) or sqrt(<num>)
+
+if __name__ == '__main__'
+-------------------+--------
+if you dont want to execute the main code ( main() ) of one script in another script the we cuse 
+       if __name__ == '__main__'
+
+This will prevent the exec of main code indirectly (in another module rather than its own module)
+
+NOTE: we can use the functions defined apart from main() if the above cond is written.
+
+__ is called as DUNDER
+
+OOP
+-------
+from abc import ABC,abstractmethod
+class C1(ABC):
+    class_var = value
+    @abstractmethod
+    def method_name(self,args..):
+        pass
+
+class C2(C1):
+    def __init__(self,c2_arg...):
+        self.c2_arg = c2_arg
+        ......
+        C1.class_var = value or inc/dec
+
+    def method_name(self):
+        logic
+
+    def method_c2(self):
+        logic
+
+class C3(C2):
+    def __init__(self,c2_arg,c3_args....):
+        super().__init__(c2_arg)
+        self.c3_arg= c3_arg
+        .........
+
+    def method_name(self)
+        logic
+
+    def method_c2(self):
+        logic
+
+class C4:
+    class_var = value      --> as var and value as C1 class var
+
+    def __init__(self,c2_args...,c3_args):
+         self.c2_arg = c2_arg
+         self c3_arg = c3_arg
+
+    def method_name(self):
+         logic
+    
+    def method_c2(self):
+        logic
+
+    @staticmethod
+    def static_method(arg):
+        logic
+    
+    @classmethod
+    def class_method(cls):
+         return cls.class_var
+
+
+
+
+a = C2(c2arg1,c2arg2)
+b = C3(c2arg1,c2arg2,c3arg1,c3arg2)
+c = C4(c2arg1,c2arg2,c3arg1,c3arg2)
+
+a.methid_c2()
+b.method_c2()
+e = C4.static_method(arg)
+f = C4.class_method()
+
+
+-> in abive coxe C1,C2,C3 are classes which are the blueprint for atteibutes (var)  and methods
+-> as abstractmethod is imported and it is mentioned method_name() method is abstractmethod. So it is mandatory for all classes to have method_name() method as shown above
+-> class_var is the class variable which is accessible as class_name.class_var as shown in class C2
+--> __init__ method is the constructir and self refers to the current one while creating class object
+-> class C2(C1), C3(C2) refers to class C2 inherits C1 and C3 inherits the class C2
+-> super().__init__ refers to the parrent class (i.e C2) constructir so all the args will be assigned as in C2 constructir
+-> in above code method_c2 exists in C2 and C3 classes so when it is called for a object create on class C3 then method_name in C3 will execute, this is called method overwritting.
+-> class C4 is ex for polymorphism using duck-typing as C4 has min no of attributes and method as C1,C2,C3
+-> IN C4 static_method is a static method which doesnt have self as arg and it is called with class name (C4) directly as shown above.
+-> apart from static_method remaining all methods having self as arg are called as instance methods
+-> in class C4 class_metjkd is a class method which takes cls as first parameter and is used to access and modify class atri in that class 
+
+Inheritance
+------------
+-> One class will use/extend the another class.
+-> It is of two kinds
+      1 Multiple inheritance -> for A, B,C classes C inherits A,B i.e C(A,B)
+      2 Multi-level inheritance ->  For A,B,C classes B inherits A and C inherits B
+
+Abstract Method
+------------------
+if in a parrent class a method is said to be abstractmethod then that method  should mandatorily present in all child classes.
+
+Method Overwritting
+---------------------
+-> if a method with same name exists in two classes A,B and B inherits A then if we call a obj created using Class B then the method in Class B will be executed.
+
+poly morphism
+----------------
+-> a class can be extended in many forms
+-> it can be acueved in two ways
+     1 by inheritance
+     2 Duck-typing
+
+Instance , Static & class methods
+---------------------------
+-> a method inside a class with self as 1st arg is called as Instance Method
+-> a method with 1st arg as cls is called class method
+-> remainjng all methods are static methods  
+
+
+Dunder methods
+-----------------
+-> __str__ : you can print anything instead of memory of class obj created using this method
+->__gt__,__lt__ : these used for comparision of two class objects
+gt = grater than , lt = less than
+-> __eq__ :  check if two class objects are equal or not
+-> __contains__ : check if a keyword present in class object or not
+-> __getitems__ : returns the value of the key
+
+NOTE: comparision is done in print stmt for two class obj as 
+        print(c1 == c2) , print(<string> in c1) etc
+
+Decorators
+------------
+-> Decorators are funcs that extends another func and takes input as func as shown below
+
+def decorator(func):
+    def wrap():
+        print("decorator")
+        func()
+     return wrap
+
+@decorator
+def func():
+    print("func")
+
+func()
+
+output
+--------
+decorator
+func
+
+-> here we will not modify the base func i e func, we will add the things in decorator func to extend the base func
+
+Lambda func (anonymous func)
+---------------------------------
+-> lambda var1,.... : exp
+-> we can assign above to a var and print it by assigning vakues as below
+          a = lambda var1,.... : exp
+          print(a(val1,.......))
+
+MAP()
+-------
+-> applies any function to the elements of iterator and returns map as output which has to be converted to iterator
+            map(func,list/tuple/set/dic)
+-> to check the output we need to convertt the output to a iterator S below
+            list(map(func,list/tuple/set/dic))
+
+FILTER()
+---------
+-> it is used to select which element in the iterator has to be taken by applying the element as input to a func
+->  the function that passed as input to filter()  has to return true or false else filtering wont happen
+-> syntax       
+                  filter(func,iterator)
+
+REDUCE()
+-----------
+-> it is used to get a single value from an iterator
+-> to use reduce func we need to import reduce from functools module
+-> reduce func take args similar to map and filter as below
+              reduce(func,iterator)
+
+
+
+
