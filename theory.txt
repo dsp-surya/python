@@ -1,5 +1,4 @@
-PYTHON IDE
---------------
+
 ->to print any thing that contains any special notations like \n,\t etc use r before the string
 	print(r'surya\november')   - where r represent raw string
 -> in Python IDE to use previous output to the current command use _
