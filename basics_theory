@@ -1,4 +1,5 @@
-
+PYTHON IDE
+--------------
 ->to print any thing that contains any special notations like \n,\t etc use r before the string
 	print(r'surya\november')   - where r represent raw string
 -> to use previous output to the current command use _
@@ -21,7 +22,7 @@ Memory
 -> Values are the objects which have the memory location but not var.
 -> var are tagged to vlaues (object) so all var with same value will have same memory location.
 
-data types
+Data types
 ------------
 -> None  =>  var with no value assigned.
 , Numeric => int, float, complex, bool
@@ -41,9 +42,9 @@ Operators
 	4 relational
 	5 logical - and, or, not
 	6 bitwise - ~, |, &, ^, << , >>
-  7 membership - IN, NOT IN
+    7 membership - IN, NOT IN
 	
-number system conversion
+Number system conversion
 -------------------------
 	-> bin(number/var) => '0b<binary value>'  - 0b is representation for binary format.
 	-> oct(number/var) => '0o<octal value>'   - 0c
@@ -59,12 +60,12 @@ String Formating & Format specifier
 -> To sub val of a  var inside the string with var name we can use string formating as below
          print(f"here is the code {var : format_specifier}")
 format_specifier = .<num>f -> no of deci place
-               <num> or ><num>   -> places spaces left side to make the var value exactly <num> char
-                                  0<num> -> (zpad)places 0 left side to make the var value exactly <num> char
-                                  <<num>  -> places spaces right side to make the var value exactly <num> char
-                                  ^<num>  -> places spaces left and right side to make the  var value exactly <num> char in the middle
-                                              ,  -> var value( if numeric) seperated by , for 1000 place
-                               <symbol> -> places <symbol> at the left of the var value
+               <num> or ><num> -> places spaces left side to make the var value exactly <num> char
+                        0<num> -> (zpad)places 0 left side to make the var value exactly <num> char
+                        <<num> -> places spaces right side to make the var value exactly <num> char
+                        ^<num> -> places spaces left and right side to make the  var value exactly <num> char in the middle
+                        ,      -> var value( if numeric) seperated by , for 1000 place
+                        <symbol> -> places <symbol> at the left of the var value
 
 NOTE :  you can combine the above format specifiers as shown in below example
 Ex: num = 1234
@@ -99,6 +100,7 @@ TUPLE(immutable)
 
 SETS 
 -----
+-> dec : var = {val1,.........}
 -> elements are not indexed (not in sequence) i.e if we print the set then the output may not be in smae order as we declared.
 -> duplicates are removed.
 -> built-in functions : add, clear, copy, difference, difference_update, discard, intersection, intersection_update, isdisjoint, issubset, issuperset
@@ -106,7 +108,7 @@ SETS
 
 Dictionary
 ----------
--> decl : <var> = {key : value}
+-> decl : <var> = {key1 : value1,......}
 -> we can use lists, tuples, sets inside a dictionary as values for a key.
 -> we can avoid error whenever we try to retrive a key tht is not present in the dictionary by using get()
 	d.get(<key>,'string') => '<string>' - if key is not present
@@ -293,8 +295,8 @@ Instance , Static & class methods
 -> remainjng all methods are static methods  
 
 
-Dunder methods
------------------
+Dunder methods (SPL methods)
+----------------------------
 -> __str__ : you can print anything instead of memory of class obj created using this method
 ->__gt__,__lt__ : these used for comparision of two class objects
 gt = grater than , lt = less than
@@ -355,7 +357,4 @@ REDUCE()
 -> to use reduce func we need to import reduce from functools module
 -> reduce func take args similar to map and filter as below
               reduce(func,iterator)
-
-
-
 
