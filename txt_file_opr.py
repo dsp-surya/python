@@ -4,13 +4,13 @@ import os
 import re
 
 # assign file location
-f_path = "C:/Users/durgasurya.pesala/Downloads/tet.txt"
+f_path = "C:/Users/durgasurya.pesala/Downloads/tet.py"
 
 # func for appending file
 def apnd(a):
     with open(f_path,'a') as f:
         f.write(f"\n{a}")
-        
+        f.close()
     return f"file appended succesfully"
 
 # func for reading file
@@ -27,20 +27,28 @@ def crf(p,a,m):
         fw.close()
     return f"{p} successfully created"
 
+# Func to delete the file
+def delt(a):
+    os.remove(a)
+    return f"file successfully deleted"
+
 def main():
     try:
         if os.path.exists(f_path):
             if os.path.isfile(f_path) :
                 print(f"{f_path} is a file\n----------------------")
-                t = input("do you want to read the file or append the file r : read & a: append")
+                t = input("do you want to read, delete or append the file r : read ,d : delete & a: append")
 
-                while  t not in ('r','a') :
-                    print("please enter values r or a")
+                while  t not in ('r','a','d') :
+                    print("please enter values r ,d or a")
                     t = input("do you want to read the file or append the file r : read & a: append")
 
                 if t=='r':
                     print(f"reading file {f_path} :")
                     print(rd())
+                elif t=='d':
+                    print(f"deleting the file {f_path}")
+                    delt(f_path)
                 else:
                     print(f"appending file {f_path} :")
                     a = input("enter lines to append it to the file")
@@ -48,13 +56,13 @@ def main():
 
             elif os.path.isdir(f_path):
                 print(f"this is a dir\ncreating file in dir {f_path}")
-                p = f_path+"/"+input("enter file name to be created")+ input("enter extension of the file")
+                p = f_path+"/"+input("enter file name to be created")+ ".txt"
                 a = input("enter line to be added while creating file")
                 print(crf(p,a,'w'))
 
         else:
-            if re.search('.*(txt|py)$',f_path):
-                print(f"creating file {f_path} which is not existed")
+            if re.search('.*(txt)$',f_path):
+                print(f"creating txt file {f_path} which is not existed")
                 a = input("enter line to be added while creating file")
                 m = input("enter in which mode file has to be creted w or x") 
                 while m not in ('w','x'):
@@ -63,7 +71,7 @@ def main():
                 crf(f_path,a,m)
                 
             else:
-                print("given dir doesnt exist")
+                print("given path is not a txt file or dir doesnt exist")
 
     except ValueError:
         print("error\n-----------------\nplease enter int values 1 or 0 only")
