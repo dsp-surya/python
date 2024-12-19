@@ -1,4 +1,5 @@
 import basics as t
-import python.txt_file_opr as txt_file_opr
+import txt_file_opr as txt
+import json_file_opr as json
 d = t.Emp('bannu',4)
 print(d)

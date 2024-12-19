@@ -357,3 +357,26 @@ REDUCE()
 -> reduce func take args similar to map and filter as below
               reduce(func,iterator)
 
+File & OS operations
+---------------------
+-> to check wether a file or dir exists in local machine we can import os module
+-> using os module we can also check if it is a file or dir as below
+        import os
+        os.path.exists(<file_path>)     -> checks if file apth exists in the machine or not
+        os.path.isfile(<file_path>)     -> checks if given file_path is a file or not
+        os.path.isdir(<file_path>)      -> chekcs if give file_path is a dir or not
+        os.remove(<file_path>)          -> removes the file
+
+For Structured files :
+-> we can open a file in read,wirte or append mode as below
+        with open(<file_path>,mode) as <alias>:
+            <alias>.read()              -> to read the content of the structured file
+            <alias>.write(<string>)     -> to write the string to the structured file 
+            <alisa>.close()             -> to clsoe the opened file
+
+    mode = r -> read
+           a -> append
+           w -> write file after truncating the file which exist or doesnt exists
+           x -> write the file which is not existed (if existed throws error)
+
+

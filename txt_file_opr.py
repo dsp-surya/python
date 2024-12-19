@@ -4,7 +4,7 @@ import os
 import re
 
 # assign file location
-f_path = "C:/Users/durgasurya.pesala/Downloads/tet.py"
+f_path = "C:/Users/durgasurya.pesala/Downloads"
 
 # func for appending file
 def apnd(a):
