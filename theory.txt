@@ -379,4 +379,32 @@ For Structured files :
            w -> write file after truncating the file which exist or doesnt exists
            x -> write the file which is not existed (if existed throws error)
 
+JSON file:
+-> reading file is as below
+    with open(<file_path>,'r') as f:
+        json.load(f)
+        f.close()
+
+-> wirtting file is as below
+    with open(<file_path>,'w'|'x') as f:
+        json.dump(f,indent=<num>)
+        f.close()
+
+NOTE: as JSON is a dict so reading file after appending will throw error , so before appending ,read the exisitng file (which is dict)
+and assign it to var and updat ethe dict sotred n the var then dump into file
+
+CSV file:
+-> Reading a CSV file is as below
+    with open(<file_path>,'r') as f:
+        mtr = csv.reader(f)
+        for i in mtr:
+            print(i)
+        f.close()
+
+-> wirtting of CSV file is as below
+    with open(<file_path>,'w'|'x',newlline='') as f:
+        w = csv.writer(f)
+        for i in ll:                --> ll is 2d list i.e [[2,3],[1,2]]
+            w.writerow(i)
+        f.close()
 

@@ -3,7 +3,7 @@ import re
 import json
 
 # assign file location
-f_path = "C:/Users/durgasurya.pesala/Downloads/test.json"
+f_path = "C:/Users/durgasurya.pesala/Downloads"
 
 
 # func for reading file
@@ -44,7 +44,7 @@ def main():
                         d[k] = input("enter a value")
                     crf(f_path,d,'w')
                     
-            elif os.path.isdir(f_path):
+            else:
                 print("creating a new json file")
                 p = f_path+"/"+input("enter file name to be created")+ ".json"
                 h = int(input("enter no of keys to create dict"))
@@ -53,6 +53,7 @@ def main():
                     d[k] = input("enter a value")
 
                 print(crf(p,d,'w'))
+                
         elif re.search('.*(json)$',f_path):
             print("creating a json file that is not existed")
             h = int(input("enter no of keys to create dict"))
