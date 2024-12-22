@@ -4,7 +4,7 @@ import os
 import re
 
 # assign file location
-f_path = "C:/Users/durgasurya.pesala/Downloads"
+f_path = "C:/Users/durgasurya.pesala/Downloads/test.txt"
 
 # func for appending file
 def apnd(a):

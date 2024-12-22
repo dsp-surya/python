@@ -17,9 +17,9 @@ Memory
 -> The address of the memory can be retrived using 
 		id(<var>)
 -> if more than one var having same data then all those variables will point out to same memory location.
--> doe to this reason python is said to be more memory effecient.
+-> due to this reason python is said to be more memory effecient.
 -> Values are the objects which have the memory location but not var.
--> var are tagged to vlaues (object) so all var with same value will have same memory location.
+-> var are tagged to values (object) so all var with same value will have same memory location.
 
 Data types
 ------------
@@ -71,7 +71,7 @@ Ex: num = 1234
       print(f"nunber is {num : +,.2f}  -> +1,234.00
 
 LISTS(mutable)
-------
+--------------
 -> declaration : <var> = [<val>]
 -> retrieving elements of list is same as arrays
 -> displaying list elements using slicing
@@ -125,6 +125,27 @@ var = [expression for i in iterable if cond]
 
 Ex: lst =  [i for i in ramge(1,6) if i%2 ==0]
 
+ARRAY 
+------
+-> to create any array import array module
+        import array as ar
+        ar.array('<type_code>',[<elements] or <iterables(with elements of same type code)>)
+
+    type_code -> b - int - signed char 
+                 B - int - unsigned char 
+                 u - unicode cahr - wchar_t
+                 h - int - signed short
+                 H - int - unsigned short
+                 i - int - signed int
+                 I - int - unsigned int
+                 l - int - signed long
+                 L - int - unsigned long
+                 q - int - signed long long
+                 Q - int - unsigned long long
+                 f - float
+                 d - double
+
+-> to get the no 
 Match - Case stmt
 ---------------------
 It is same as a switch
@@ -165,6 +186,11 @@ packing positional args as tuple using *args
 packing keyword args as diction using **kwargs
 surya
 123
+
+DOCSTRING
+-----------
+-> in a func if we wirte anything insdie ("""  """) or (''' ''') then it will show up when we call the func.
+-> we can aslo print it using func.__doc__
 
 import
 -------
@@ -408,3 +434,56 @@ CSV file:
             w.writerow(i)
         f.close()
 
+NUMPY
+-----
+-> used for mathematical operations for N-D array
+-> creating an array is as below
+        import numpy as numpy
+        arr = np.array(<list/tuple>,dtype(optional) = <daa type>)
+
+-> dimentions and shape of arr is 
+        arr.ndim  - dimentions
+        arr.shape - (a,b,c,....) where a,b,.. are axis of dim
+
+-> to create any array with all 0 & 1 elements is a s followed
+        np.zeros(<shape>) - arr with all zeros
+        np.ones(<shape>)  - arr with all ones
+        
+-> to create a identity arr
+        np.identity(<shape>) - diagonal elements are 1
+
+-> to create array with all elements as desired
+        np.full(<shape>,<desired_value>) - arr having all elements as <desired_value> is created
+
+-> to create array with shape of another array of disered values
+        np.full_like(<arr>,<desired_value)   
+
+-> to create arr with random numbers
+        np.random.rand(a,b,c,....)
+
+-> to create arr with random number of a existing array shape
+        np.random.random_sample(<arr shape)
+
+-> to create arr with random numbers of particular datatype
+        np.random.randint(start,end,size = (n.m))
+
+-> to create an arr by laod a file having arr 
+        np.genfromtxt('<file_path>',delimiter = '<delimiter in file>')
+
+-> to reshape an arr
+        a.reshape((<new shape>))
+
+-> if we create array from another array using assignment opr then any modification done to the new array will be done to old one too.
+    so create new arr with the copy() rather than =
+        arr2 = arr.copy()  
+
+Accessing elements in array:
+->  for a n dim arr elemetns can be accessed as followed
+        arr[a,b,c,d,.....]
+        arr[0,[1,1],0,0,.....]
+
+-> we can also check the confition in a arr
+        arr > 20           - gives arr with true or false
+        arr[arr > 20]      - gives the values where it is > 20
+        arr[0,0,[1,2]]>20
+        (arr >20) & (arr < 100)
