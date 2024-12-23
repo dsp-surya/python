@@ -457,9 +457,18 @@ NUMPY
         import numpy as numpy
         arr = np.array(<list/tuple>,dtype(optional) = <daa type>)
 
+-> we can map specific data type for the values passed in arr
+        data_type = np.dype([('name','S10'),('id','int')])
+        arr = np.array([('krishan',1),('surya',2)],dtype = data_type)
+
+        S10 - string with length 10
+
 -> dimentions and shape of arr is 
         arr.ndim  - dimentions
         arr.shape - (a,b,c,....) where a,b,.. are axis of dim
+
+-> to change the arr data type 
+        arr.astype('<dtype>')
 
 -> to create any array with all 0 & 1 elements is a s followed
         np.zeros(<shape>) - arr with all zeros
@@ -487,10 +496,34 @@ NUMPY
         np.arange(start,end,interval)
 
 -> to create arr between two number including the end value which has to divide the number range into no of numbers
-        np.linspace(start,end,no_of_nos)
+        np.linspace(start,end,no_of_nos_req_o/p,endpoint=<T|F>,retstep = <T|F>)
+        endpoint    - includes end if True
+        retstep     - includes step in output
 
 -> to create an arr by laod a file having arr 
         np.genfromtxt('<file_path>',delimiter = '<delimiter in file>')
+
+-> to create array using a string
+        np.frombuffer(binary_string,count=<value>,offset=<value>)
+
+        binary_stirng   -> b"<stirng>"
+        count           -> -1  - takes everything
+                           <num> - takes upto <num> elements
+        offset          -> 0   - takes from start
+                           <num> - takes <num> after starting
+
+-> to create array using iterables
+        np.fromiter(<iters>,count=<num>)
+
+-> to create arr with different order of filling the elements
+        np.asarray(arr,order = '<order_char>')
+        order_char  -> 'C' - fill elements by rows
+                       'F' - fill elements by Cols
+        to understand diff print elements of arr with diff orders using nditer
+
+-> to get the elements of arr same like iterables using for loop, we need to use nditer()
+                for i in nditer(arr):
+                        print(i)
 
 -> to reshape an arr
         a.reshape((<new shape>))
@@ -499,13 +532,29 @@ NUMPY
     so create new arr with the copy() rather than =
         arr2 = arr.copy()  
 
+-> if we create array using view() then the new arr will be a view of original one (changes in any will reflect in both)
+        arr2 = arr.view()
+   to check it is a own array or view use base
+        arr.base - none  -> own arr
+        arr2.base - arr2 -> view
+
 Accessing elements in array:
 ->  for a n dim arr elemetns can be accessed as followed
         arr[a,b,c,d,.....]
         arr[0,[1,1],0,0,.....]
 
--> we can also check the confition in a arr
+-> we can also check the condition in a arr
         arr > 20           - gives arr with true or false
         arr[arr > 20]      - gives the values where it is > 20
         arr[0,0,[1,2]]>20
         (arr >20) & (arr < 100)
+
+Joining arrays:
+-> using concatinate()
+        np.concatinate((arr,arr2),axis = <0|1>)
+        if axis    - 0 : the cols are concatinated vertically
+                   - 1 : rows are concatinated side by side
+
+Note: in any func in np axis atr - 0  : performs opr on col wise
+                                 - 1  : performs opr on row wise
+
