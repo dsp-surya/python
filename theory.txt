@@ -117,6 +117,22 @@ Dictionary
 
 NOTE: other way to creating lists, tuples, sets & dict is by using respective constructore i.e list(<values>/ existing set/tuple), dict({<key>:<value>}), set(<values>/ list/tuple), tuple(<values>/ list/set)
 
+UNPACKING LIST,TUPLE,SETS & DICT
+---------------------------------
+-> we can assign the values of list and tuples to vaiables diresctly as below
+        a,b,c = <list/tuple>  - list/tuple having 3 values
+
+-> we can assign  more then 3 values to var using * as shown below
+        a,b,*c = <list/tuple/set> - first two values sotore in a,b and rest store in c as list
+        a,*b,c =  <list/tuple/set> - first and last value store in a,c and rest in b as list
+        *a,b,c =  <list/tuple/set> - last two values sotore in b,c and the rest in a as list
+        a,_,b,_,c =  <list/tuple/set> - _ will skip the value form list/tuple at that position
+
+-> we can assign the vlaues for each keys of dic to var
+        a,b,c = d['a'],d['b'],d['c']
+
+-> for unpacking more number of values , we need to iter to dict and unpack the values
+
 LIST COMPREHNSION
 --------+--------------
 it will return  list by iterating through a iterable followed by a if condition (optional)
@@ -466,6 +482,12 @@ NUMPY
 
 -> to create arr with random numbers of particular datatype
         np.random.randint(start,end,size = (n.m))
+
+-> to create arr between two numbers
+        np.arange(start,end,interval)
+
+-> to create arr between two number including the end value which has to divide the number range into no of numbers
+        np.linspace(start,end,no_of_nos)
 
 -> to create an arr by laod a file having arr 
         np.genfromtxt('<file_path>',delimiter = '<delimiter in file>')

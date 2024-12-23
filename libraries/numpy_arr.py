@@ -54,9 +54,13 @@ try:
 
 # creating array from a text file
     f_path = "C:/Users/durgasurya.pesala/Downloads/test.txt"
-    print(f"creating array from the file {f_path}")
+    print(f"creating array from the file {f_path} using genfromtxt()")
     gen_arr = np.genfromtxt(f_path,delimiter= ',')
     print(gen_arr)
+
+    print(f"creating array from the file {f_path} using loadtxt()")
+    load_arr = np.loadtxt(f_path,dtype='int32',delimiter=',')
+    print(load_arr)
 
 
 
