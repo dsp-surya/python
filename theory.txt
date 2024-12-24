@@ -590,7 +590,9 @@ Series:
 
 DataFrames:
 -> we can create a datafream as
-		df = np.DataFrame(<series/array/list/dict/tuple/imported_data>)
+		df = np.DataFrame(<series/array/list/dict/tuple/imported_data>,index = <index>,columns = <cols>)
+
+	eg: df = pd.DataFrame((np.arange(1,21)).reshape((4,5)),index = ['a','b','c','d'],columns = ['c1','c2','c3','c4','c5'])
 
 			df.values		-	gets values in df
 			df.columns		-	gets columns in df
@@ -599,6 +601,9 @@ DataFrames:
 			df.size			-	gets the no of rows in df
 			df.dtypes		-	gets the data type of each column
 
+->to change data type of a col in df 
+		df['<col>'] = df['<col>'].astype('<dtype>')
+		
 -> accessing values in datafram df
 		df['<col_name>']				-	get the paritcular <col_name> values
 		df[['<col1>','<col2>',....]]	-	get the values for col1,col2,...
