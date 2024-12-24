@@ -1,4 +1,4 @@
-import pandas as pd
-import numpy as np
+import sys
+import subprocess as s
 
-
+s.check_call([sys.executable,'-m','pip','install','openpyxl'])

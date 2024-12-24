@@ -57,14 +57,14 @@ stack rotation (rotation two / rot_two())
 String Formating & Format specifier
 ------------------------------------
 -> To sub val of a  var inside the string with var name we can use string formating as below
-         print(f"here is the code {var : format_specifier}")
+	 print(f"here is the code {var : format_specifier}")
 format_specifier = .<num>f -> no of deci place
-               <num> or ><num> -> places spaces left side to make the var value exactly <num> char
-                        0<num> -> (zpad)places 0 left side to make the var value exactly <num> char
-                        <<num> -> places spaces right side to make the var value exactly <num> char
-                        ^<num> -> places spaces left and right side to make the  var value exactly <num> char in the middle
-                        ,      -> var value( if numeric) seperated by , for 1000 place
-                        <symbol> -> places <symbol> at the left of the var value
+	       <num> or ><num> -> places spaces left side to make the var value exactly <num> char
+			0<num> -> (zpad)places 0 left side to make the var value exactly <num> char
+			<<num> -> places spaces right side to make the var value exactly <num> char
+			^<num> -> places spaces left and right side to make the  var value exactly <num> char in the middle
+			,      -> var value( if numeric) seperated by , for 1000 place
+			<symbol> -> places <symbol> at the left of the var value
 
 NOTE :  you can combine the above format specifiers as shown in below example
 Ex: num = 1234
@@ -78,7 +78,7 @@ LISTS(mutable)
 		<var>[<starting_index>,<no of element from staring index>,<skip value>)
 	ex: a = [1,2,3,4,5]
 	print(a[1,4,1] => 1 - staring index value => 2
-	                  4 - no of elements from staring index => 1,2,3,4
+			  4 - no of elements from staring index => 1,2,3,4
 					  1 - sking elements includes staritng index => 0 as 1 represents the starting element so no skipping element
 	output: [2,3,4] => no of elements in output list = 4(value of no of elements from starting index) - 1 (starting index) = 3
 	so from starting index i.e 1 => 2 we will get upto 3 elements i.e 2,3,4
@@ -120,16 +120,16 @@ NOTE: other way to creating lists, tuples, sets & dict is by using respective co
 UNPACKING LIST,TUPLE,SETS & DICT
 ---------------------------------
 -> we can assign the values of list and tuples to vaiables diresctly as below
-        a,b,c = <list/tuple>  - list/tuple having 3 values
+	a,b,c = <list/tuple>  - list/tuple having 3 values
 
 -> we can assign  more then 3 values to var using * as shown below
-        a,b,*c = <list/tuple/set> - first two values sotore in a,b and rest store in c as list
-        a,*b,c =  <list/tuple/set> - first and last value store in a,c and rest in b as list
-        *a,b,c =  <list/tuple/set> - last two values sotore in b,c and the rest in a as list
-        a,_,b,_,c =  <list/tuple/set> - _ will skip the value form list/tuple at that position
+	a,b,*c = <list/tuple/set> - first two values sotore in a,b and rest store in c as list
+	a,*b,c =  <list/tuple/set> - first and last value store in a,c and rest in b as list
+	*a,b,c =  <list/tuple/set> - last two values sotore in b,c and the rest in a as list
+	a,_,b,_,c =  <list/tuple/set> - _ will skip the value form list/tuple at that position
 
 -> we can assign the vlaues for each keys of dic to var
-        a,b,c = d['a'],d['b'],d['c']
+	a,b,c = d['a'],d['b'],d['c']
 
 -> for unpacking more number of values , we need to iter to dict and unpack the values
 
@@ -144,22 +144,22 @@ Ex: lst =  [i for i in ramge(1,6) if i%2 ==0]
 ARRAY 
 ------
 -> to create any array import array module
-        import array as ar
-        ar.array('<type_code>',[<elements] or <iterables(with elements of same type code)>)
+	import array as ar
+	ar.array('<type_code>',[<elements] or <iterables(with elements of same type code)>)
 
     type_code -> b - int - signed char 
-                 B - int - unsigned char 
-                 u - unicode cahr - wchar_t
-                 h - int - signed short
-                 H - int - unsigned short
-                 i - int - signed int
-                 I - int - unsigned int
-                 l - int - signed long
-                 L - int - unsigned long
-                 q - int - signed long long
-                 Q - int - unsigned long long
-                 f - float
-                 d - double
+		 B - int - unsigned char 
+		 u - unicode cahr - wchar_t
+		 h - int - signed short
+		 H - int - unsigned short
+		 i - int - signed int
+		 I - int - unsigned int
+		 l - int - signed long
+		 L - int - unsigned long
+		 q - int - signed long long
+		 Q - int - unsigned long long
+		 f - float
+		 d - double
 
 -> to get the no 
 Match - Case stmt
@@ -168,11 +168,11 @@ It is same as a switch
 
 match var or val or expr:
       case <val> or <expr>:
-            return 
+	    return 
       .
       .
       case _:
-            return
+	    return
 
 NOTE: case _ -> else (not matched)
 
@@ -184,11 +184,11 @@ def func(arg1,arg2,*args,**kwargs):
 
     print('packing positional args as tuple using *args')
     for i in args:
-        print(i)
+	print(i)
 
     print('packing keyword args as diction using **kwargs')
     for key,value in kwargs.items():
-        print(value)
+	print(value)
 
 func(1,2,3,4,5,6,name='surya',id='123')
 
@@ -235,52 +235,52 @@ class C1(ABC):
     class_var = value
     @abstractmethod
     def method_name(self,args..):
-        pass
+	pass
 
 class C2(C1):
     def __init__(self,c2_arg...):
-        self.c2_arg = c2_arg
-        ......
-        C1.class_var = value or inc/dec
+	self.c2_arg = c2_arg
+	......
+	C1.class_var = value or inc/dec
 
     def method_name(self):
-        logic
+	logic
 
     def method_c2(self):
-        logic
+	logic
 
 class C3(C2):
     def __init__(self,c2_arg,c3_args....):
-        super().__init__(c2_arg)
-        self.c3_arg= c3_arg
-        .........
+	super().__init__(c2_arg)
+	self.c3_arg= c3_arg
+	.........
 
     def method_name(self)
-        logic
+	logic
 
     def method_c2(self):
-        logic
+	logic
 
 class C4:
     class_var = value      --> as var and value as C1 class var
 
     def __init__(self,c2_args...,c3_args):
-         self.c2_arg = c2_arg
-         self c3_arg = c3_arg
+	 self.c2_arg = c2_arg
+	 self c3_arg = c3_arg
 
     def method_name(self):
-         logic
+	 logic
     
     def method_c2(self):
-        logic
+	logic
 
     @staticmethod
     def static_method(arg):
-        logic
+	logic
     
     @classmethod
     def class_method(cls):
-         return cls.class_var
+	 return cls.class_var
 
 
 
@@ -346,7 +346,7 @@ gt = grater than , lt = less than
 -> __getitems__ : returns the value of the key
 
 NOTE: comparision is done in print stmt for two class obj as 
-        print(c1 == c2) , print(<string> in c1) etc
+	print(c1 == c2) , print(<string> in c1) etc
 
 Decorators
 ------------
@@ -354,8 +354,8 @@ Decorators
 
 def decorator(func):
     def wrap():
-        print("decorator")
-        func()
+	print("decorator")
+	func()
      return wrap
 
 @decorator
@@ -375,62 +375,62 @@ Lambda func (anonymous func)
 ---------------------------------
 -> lambda var1,.... : exp
 -> we can assign above to a var and print it by assigning vakues as below
-          a = lambda var1,.... : exp
-          print(a(val1,.......))
+	  a = lambda var1,.... : exp
+	  print(a(val1,.......))
 
 MAP()
 -------
 -> applies any function to the elements of iterator and returns map as output which has to be converted to iterator
-            map(func,list/tuple/set/dic)
+	    map(func,list/tuple/set/dic)
 -> to check the output we need to convertt the output to a iterator S below
-            list(map(func,list/tuple/set/dic))
+	    list(map(func,list/tuple/set/dic))
 
 FILTER()
 ---------
 -> it is used to select which element in the iterator has to be taken by applying the element as input to a func
 ->  the function that passed as input to filter()  has to return true or false else filtering wont happen
 -> syntax       
-                  filter(func,iterator)
+		  filter(func,iterator)
 
 REDUCE()
 -----------
 -> it is used to get a single value from an iterator
 -> to use reduce func we need to import reduce from functools module
 -> reduce func take args similar to map and filter as below
-              reduce(func,iterator)
+	      reduce(func,iterator)
 
 File & OS operations
 ---------------------
 -> to check wether a file or dir exists in local machine we can import os module
 -> using os module we can also check if it is a file or dir as below
-        import os
-        os.path.exists(<file_path>)     -> checks if file apth exists in the machine or not
-        os.path.isfile(<file_path>)     -> checks if given file_path is a file or not
-        os.path.isdir(<file_path>)      -> chekcs if give file_path is a dir or not
-        os.remove(<file_path>)          -> removes the file
+	import os
+	os.path.exists(<file_path>)     -> checks if file apth exists in the machine or not
+	os.path.isfile(<file_path>)     -> checks if given file_path is a file or not
+	os.path.isdir(<file_path>)      -> chekcs if give file_path is a dir or not
+	os.remove(<file_path>)          -> removes the file
 
 For Structured files :
 -> we can open a file in read,wirte or append mode as below
-        with open(<file_path>,mode) as <alias>:
-            <alias>.read()              -> to read the content of the structured file
-            <alias>.write(<string>)     -> to write the string to the structured file 
-            <alisa>.close()             -> to clsoe the opened file
+	with open(<file_path>,mode) as <alias>:
+	    <alias>.read()              -> to read the content of the structured file
+	    <alias>.write(<string>)     -> to write the string to the structured file 
+	    <alisa>.close()             -> to clsoe the opened file
 
     mode = r -> read
-           a -> append
-           w -> write file after truncating the file which exist or doesnt exists
-           x -> write the file which is not existed (if existed throws error)
+	   a -> append
+	   w -> write file after truncating the file which exist or doesnt exists
+	   x -> write the file which is not existed (if existed throws error)
 
 JSON file:
 -> reading file is as below
     with open(<file_path>,'r') as f:
-        json.load(f)
-        f.close()
+	json.load(f)
+	f.close()
 
 -> wirtting file is as below
     with open(<file_path>,'w'|'x') as f:
-        json.dump(f,indent=<num>)
-        f.close()
+	json.dump(f,indent=<num>)
+	f.close()
 
 NOTE: as JSON is a dict so reading file after appending will throw error , so before appending ,read the exisitng file (which is dict)
 and assign it to var and updat ethe dict sotred n the var then dump into file
@@ -438,123 +438,189 @@ and assign it to var and updat ethe dict sotred n the var then dump into file
 CSV file:
 -> Reading a CSV file is as below
     with open(<file_path>,'r') as f:
-        mtr = csv.reader(f)
-        for i in mtr:
-            print(i)
-        f.close()
+	mtr = csv.reader(f)
+	for i in mtr:
+	    print(i)
+	f.close()
 
 -> wirtting of CSV file is as below
     with open(<file_path>,'w'|'x',newlline='') as f:
-        w = csv.writer(f)
-        for i in ll:                --> ll is 2d list i.e [[2,3],[1,2]]
-            w.writerow(i)
-        f.close()
+	w = csv.writer(f)
+	for i in ll:                --> ll is 2d list i.e [[2,3],[1,2]]
+	    w.writerow(i)
+	f.close()
 
 NUMPY
 -----
 -> used for mathematical operations for N-D array
 -> creating an array is as below
-        import numpy as numpy
-        arr = np.array(<list/tuple>,dtype(optional) = <daa type>)
+	import numpy as numpy
+	arr = np.array(<list/tuple>,dtype(optional) = <daa type>)
 
 -> we can map specific data type for the values passed in arr
-        data_type = np.dype([('name','S10'),('id','int')])
-        arr = np.array([('krishan',1),('surya',2)],dtype = data_type)
+	data_type = np.dype([('name','S10'),('id','int')])
+	arr = np.array([('krishan',1),('surya',2)],dtype = data_type)
 
-        S10 - string with length 10
+	S10 - string with length 10
 
 -> dimentions and shape of arr is 
-        arr.ndim  - dimentions
-        arr.shape - (a,b,c,....) where a,b,.. are axis of dim
+	arr.ndim  - dimentions
+	arr.shape - (a,b,c,....) where a,b,.. are axis of dim
 
 -> to change the arr data type 
-        arr.astype('<dtype>')
+	arr.astype('<dtype>')
 
 -> to create any array with all 0 & 1 elements is a s followed
-        np.zeros(<shape>) - arr with all zeros
-        np.ones(<shape>)  - arr with all ones
-        
+	np.zeros(<shape>) - arr with all zeros
+	np.ones(<shape>)  - arr with all ones
+	
 -> to create a identity arr
-        np.identity(<shape>) - diagonal elements are 1
+	np.identity(<shape>) - diagonal elements are 1
 
 -> to create array with all elements as desired
-        np.full(<shape>,<desired_value>) - arr having all elements as <desired_value> is created
+	np.full(<shape>,<desired_value>) - arr having all elements as <desired_value> is created
 
 -> to create array with shape of another array of disered values
-        np.full_like(<arr>,<desired_value)   
+	np.full_like(<arr>,<desired_value)   
 
 -> to create arr with random numbers
-        np.random.rand(a,b,c,....)
+	np.random.rand(a,b,c,....)
 
 -> to create arr with random number of a existing array shape
-        np.random.random_sample(<arr shape)
+	np.random.random_sample(<arr shape)
 
 -> to create arr with random numbers of particular datatype
-        np.random.randint(start,end,size = (n.m))
+	np.random.randint(start,end,size = (n.m))
 
 -> to create arr between two numbers
-        np.arange(start,end,interval)
+	np.arange(start,end,interval)
 
 -> to create arr between two number including the end value which has to divide the number range into no of numbers
-        np.linspace(start,end,no_of_nos_req_o/p,endpoint=<T|F>,retstep = <T|F>)
-        endpoint    - includes end if True
-        retstep     - includes step in output
+	np.linspace(start,end,no_of_nos_req_o/p,endpoint=<T|F>,retstep = <T|F>)
+	endpoint    - includes end if True
+	retstep     - includes step in output
 
 -> to create an arr by laod a file having arr 
-        np.genfromtxt('<file_path>',delimiter = '<delimiter in file>')
+	np.genfromtxt('<file_path>',delimiter = '<delimiter in file>')
 
 -> to create array using a string
-        np.frombuffer(binary_string,count=<value>,offset=<value>)
+	np.frombuffer(binary_string,count=<value>,offset=<value>)
 
-        binary_stirng   -> b"<stirng>"
-        count           -> -1  - takes everything
-                           <num> - takes upto <num> elements
-        offset          -> 0   - takes from start
-                           <num> - takes <num> after starting
+	binary_stirng   -> b"<stirng>"
+	count           -> -1  - takes everything
+			   <num> - takes upto <num> elements
+	offset          -> 0   - takes from start
+			   <num> - takes <num> after starting
 
 -> to create array using iterables
-        np.fromiter(<iters>,count=<num>)
+	np.fromiter(<iters>,count=<num>)
 
 -> to create arr with different order of filling the elements
-        np.asarray(arr,order = '<order_char>')
-        order_char  -> 'C' - fill elements by rows
-                       'F' - fill elements by Cols
-        to understand diff print elements of arr with diff orders using nditer
+	np.asarray(arr,order = '<order_char>')
+	order_char  -> 'C' - fill elements by rows
+		       'F' - fill elements by Cols
+	to understand diff print elements of arr with diff orders using nditer
 
 -> to get the elements of arr same like iterables using for loop, we need to use nditer()
-                for i in nditer(arr):
-                        print(i)
+		for i in nditer(arr):
+			print(i)
 
 -> to reshape an arr
-        a.reshape((<new shape>))
+	a.reshape((<new shape>))
 
 -> if we create array from another array using assignment opr then any modification done to the new array will be done to old one too.
     so create new arr with the copy() rather than =
-        arr2 = arr.copy()  
+	arr2 = arr.copy()  
 
 -> if we create array using view() then the new arr will be a view of original one (changes in any will reflect in both)
-        arr2 = arr.view()
+	arr2 = arr.view()
    to check it is a own array or view use base
-        arr.base - none  -> own arr
-        arr2.base - arr2 -> view
+	arr.base - none  -> own arr
+	arr2.base - arr2 -> view
 
 Accessing elements in array:
 ->  for a n dim arr elemetns can be accessed as followed
-        arr[a,b,c,d,.....]
-        arr[0,[1,1],0,0,.....]
+	arr[a,b,c,d,.....]
+	arr[0,[1,1],0,0,.....]
 
 -> we can also check the condition in a arr
-        arr > 20           - gives arr with true or false
-        arr[arr > 20]      - gives the values where it is > 20
-        arr[0,0,[1,2]]>20
-        (arr >20) & (arr < 100)
+	arr > 20           - gives arr with true or false
+	arr[arr > 20]      - gives the values where it is > 20
+	arr[0,0,[1,2]]>20
+	(arr >20) & (arr < 100)
 
 Joining arrays:
 -> using concatinate()
-        np.concatinate((arr,arr2),axis = <0|1>)
-        if axis    - 0 : the cols are concatinated vertically
-                   - 1 : rows are concatinated side by side
+	np.concatinate((arr,arr2),axis = <0|1>)
+	if axis    - 0 : the cols are concatinated vertically
+		   - 1 : rows are concatinated side by side
 
 Note: in any func in np axis atr - 0  : performs opr on col wise
-                                 - 1  : performs opr on row wise
+				 - 1  : performs opr on row wise
+
+PANDAS
+--------
+
+Series:
+-> we can create a series as
+	s = pd.Series(<array/list/tuple/dict>,index = [<values>],name='<name>',dtype='<data_type>')
+		
+		s.name		-	<name> of the Series
+		s.dtype		-	<data_type> of elements in series
+		s.values	-	<values> of the arr in Series
+		s.array		-	gets the values in term of pandas array
+		s.index    	-	shows index start , end and step
+		s.ndim		-	dim of series
+		s.nbytes	-	no of bytes taken by seroes
+		s.memory_usage() -	no of bytes taken by series including index
+		s.memory_susage(index = False) - no of bytes taken by series without index
+
+
+-> to access elements of array in series
+		s[<index>/0/1...]	-	values of <index>
+		a[0:2]				-	gets first two rows
+
+-> for tow series s1,s2 all mathematical opr can be performed
+
+DataFrames:
+-> we can create a datafream as
+		df = np.DataFrame(<series/array/list/dict/tuple/imported_data>)
+
+			df.values		-	gets values in df
+			df.columns		-	gets columns in df
+			df.index		-	gets indexes in df
+			df.shape		-	gets the shape of df
+			df.size			-	gets the no of rows in df
+			df.dtypes		-	gets the data type of each column
+
+-> accessing values in datafram df
+		df['<col_name>']				-	get the paritcular <col_name> values
+		df[['<col1>','<col2>',....]]	-	get the values for col1,col2,...
+		df[start:end:step]				-	get the values as per slicing
+		df.head(<num>)					-	get the first <num> rows
+		df.tail(<num>)					-	get the last <num> rows
+		df.describe()					-	gets all rows with some aggr func applied on each col
+
+-> to add new column to a df
+		df['<col_name>'] = <value>						- to add a single col
+		df[['<col1>','<col2>',...]] = [val1,val2...]	- to add multiple col
+
+-> we can do any mathetical opr on newly added cols to get meaningful data
+		df['<new_col>'] = df['<col1>'] + df['<col2>']
+
+-> to drop a column from a df
+		df.drop(columns = '<col_name>')					- to drop a single col
+		df.drop(columns = ['<col1>','<col2>',...])		- to drop multiple cols
+
+-> to sort data in cols in df
+		df.sort_values('<col_name>',ascending = <True|False>)			- sort col ass or desc as per input
+		df.sort_values(['<col1'>,'<col2>'],ascending = [0,1])			- sort the col1 in desc and col2 in asc after soritng col1
+
+-> to export the df 
+		df.to_excel('<file_path.xlsx>',index = True|False)		- export df as excel if index is true then it will be ncluded
+		df.to_csv('<file_path.csv>',index = True|False)			- exprot as csv
+		df.to_csv('<file_path.txt>',index = True|False)				- export as txt
+
+		we can export for remaining formats - json,parquet,sql,xml,orc,html,latex etc
+
 
