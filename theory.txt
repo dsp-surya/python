@@ -540,8 +540,14 @@ NUMPY
 
 Accessing elements in array:
 ->  for a n dim arr elemetns can be accessed as followed
-	arr[a,b,c,d,.....]
+	arr[a,b,c,d,.....n]
 	arr[0,[1,1],0,0,.....]
+
+	ex : a = 	[[1 2 3 4 5]
+				 [3 6 2 1 2]
+				 [8 3 4 2 1]]
+		a[1,2]  -> 2
+		a[2,[2,3]] -> [4 2]
 
 -> we can also check the condition in a arr
 	arr > 20           - gives arr with true or false
@@ -552,8 +558,8 @@ Accessing elements in array:
 Joining arrays:
 -> using concatinate()
 	np.concatinate((arr,arr2),axis = <0|1>)
-	if axis    - 0 : the cols are concatinated vertically
-		   - 1 : rows are concatinated side by side
+	if axis    	- 0 : the cols are concatinated vertically
+		   		- 1 : rows are concatinated side by side
 
 Note: in any func in np axis atr - 0  : performs opr on col wise
 				 - 1  : performs opr on row wise

@@ -1,4 +1,13 @@
-import sys
-import subprocess as s
+import numpy_arr as npa
+import pandas as pd
 
-s.check_call([sys.executable,'-m','pip','install','openpyxl'])
+# creating an array from numpy_arr module
+print(f"creating array from numpy_arr module")
+arr = npa.crt_arr()
+print(f"the array created with shape {arr.shape} :\n{arr}")
+
+# creating datafram from arr created
+df = pd.DataFrame(arr)
+print(f"Datafram created is :\n{df}")
+
+# 
