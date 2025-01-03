@@ -1,0 +1,59 @@
+-> to list all the properties in config file
+        git config --global --list
+
+-> unsetting the config properties
+        git config --global --unset-all http.sslcainfo
+        git config --global --unset-all http.sslvarify
+        git config --global --unset-all http.proxy
+        git config --global --unset-all http.proxystrictssl
+        git config --global --unset-all http.proxyauthorization
+        git config --global --unset-all user.name
+        git config --global --unset-all user.email
+
+-> setting config properties
+        git config --global http.sslcainfo C:\"Program Files"\Git\mingw64\ssl\cert\ca-bundle.crt
+        git config --global sslvarify false
+        git config --global --add proxystrictssl ture
+        git config --global --add proxyauthorization null
+        git config --global http.proxy <proxy-url>
+        git config --global user.name "<name>"
+        git config --gloabl user.email <email>
+
+-> to make the no of branches (newly added or removing branches) of remote sync with local
+        git fetch --prune
+
+-> to pulll data from a particular remote branches
+        git pull --rebase origin <branch_name>
+
+-> to push changes that are pulled from remote branch to local-remote branch
+        git push origin <branch_name>
+
+-> to stage  changes
+        git add .       -  all changes
+        git add <file>  -  only mentioned file changes
+
+-> to commit  changes
+        git commit -m "<message>"
+
+-> to check logs of commits
+        git log
+
+-> to undo commited changes
+        git reset --soft <commit id>    -   only undo the commited changes
+        git reset --hard <commit id>    -   undo commited changes adn removes the fiels
+
+-> to create branch refering to a remote beanch and switch to newly created brnach
+        git chekcout -b <branch_name> <ref_remote_branch_name>
+
+-> to create branch in remote
+        git push origin <branch_name>
+
+-> to delete branch
+        git branch -d <branch_name>
+        git branch -D <branch_name>     - force delete
+
+-> to delete remote branch
+        git push origin --delete <branch_name>
+
+-> to merge changes from one branch to another
+        git merge <branch_name>
