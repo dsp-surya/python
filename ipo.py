@@ -1,4 +1,5 @@
 import smtplib
+import os
 from email.message import EmailMessage
 import time
 import pandas as pd
