@@ -26,8 +26,8 @@ ipo_df.columns = ['Name', 'GMP', 'Rating', 'Sub', 'Price', 'IPO Size',
 print(ipo_df)
 
 # Configurable settings
-SENDER_EMAIL = "testing0357a@gmail.com"
-APP_PASSWORD = "wezqrxezjkstloth"  # Use your app password here
+SENDER_EMAIL = os.environ.get("SENDER_EMAIL")
+APP_PASSWORD = os.environ.get("APP_PASSWORD")
 RECIPIENT_EMAIL = "testing0357a@gmail.com"
 
 # Construct the email
