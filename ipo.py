@@ -169,12 +169,12 @@ def process_and_filter_ipo_data(df: pd.DataFrame) -> pd.DataFrame:
     gmp_pct = (gmp_val / price_num) * 100
 
     # Tiered Filtering:
-    # 1. Bid Amount < 16,000 -> Keep if GMP % > 10%
+    # 1. Bid Amount < 16,000 -> Keep if GMP % >= 10%
     # 2. Bid Amount > 100,000 -> Keep if GMP % >= 25%
-    # 3. 16,000 <= Bid Amount <= 100,000 -> Keep if GMP % > 10%
-    cond_small_bid = (bid_amount < 16000) & (gmp_pct > 10)
+    # 3. 16,000 <= Bid Amount <= 100,000 -> Keep if GMP % >= 10%
+    cond_small_bid = (bid_amount < 16000) & (gmp_pct >= 10)
     cond_large_bid = (bid_amount > 100000) & (gmp_pct >= 25)
-    cond_mid_bid = (bid_amount >= 16000) & (bid_amount <= 100000) & (gmp_pct > 10)
+    cond_mid_bid = (bid_amount >= 16000) & (bid_amount <= 100000) & (gmp_pct >= 10)
 
     df = df[cond_small_bid | cond_large_bid | cond_mid_bid].copy()
     print(f"Rows remaining after tiered GMP filter: {len(df)}")
@@ -263,7 +263,7 @@ def build_html_email(df: pd.DataFrame) -> str:
       </head>
       <body>
         <h2>Live & Upcoming IPO GMP Report</h2>
-        <div class="legend">Filter applied: Bid &lt; ₹16K (GMP &gt; 10%) | Bid &gt; ₹1 Lakh (GMP ≥ 25%). <span>Rows with GMP % ≥ 20% are highlighted in green.</span></div>
+        <div class="legend">Filter applied: Bid &lt; ₹16K (GMP ≥ 10%) | Bid &gt; ₹1 Lakh (GMP ≥ 25%). <span>Rows with GMP % ≥ 20% are highlighted in green.</span></div>
         <table class="ipo-table">
           <thead><tr>{headers_html}</tr></thead>
           <tbody>{"".join(table_rows)}</tbody>
