@@ -27,4 +27,5 @@ jobs:
         env:
           SENDER_EMAIL: ${{ secrets.MAIL_USERNAME }}
           APP_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
         run: python ipo.py
