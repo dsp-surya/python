@@ -275,7 +275,7 @@ def build_html_email(df: pd.DataFrame) -> str:
 def send_email(html_body: str, is_empty: bool, df: pd.DataFrame):
     sender_email = os.environ.get("SENDER_EMAIL")
     app_password = os.environ.get("APP_PASSWORD")
-    recipients_raw = os.environ.get("RECIPIENT_EMAILS", "MAIL_USERNAME")
+    recipients_raw = os.environ.get("RECIPIENT_EMAILS","testing0357a@gmail.com")
     recipients_list = [e.strip() for e in recipients_raw.split(",") if e.strip()]
 
     if not sender_email or not app_password:
