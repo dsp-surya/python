@@ -118,7 +118,7 @@ def normalize_date_series(series: pd.Series) -> pd.Series:
             return pd.NaT
         val_str = str(val).strip().lower()
         if 'closed' in val_str:
-            return pd.Timestamp('2000-01-01')  # Guarantee filter out
+            return pd.Timestamp('2000-01-01')
         
         match = re.search(r'(\d{1,2}-[A-Za-z]{3}(?:-\d{2,4})?|\d{1,2}-\d{1,2}(?:-\d{2,4})?)', str(val))
         if not match:
@@ -133,7 +133,7 @@ def normalize_date_series(series: pd.Series) -> pd.Series:
     return series.apply(parse_val)
 
 def process_and_filter_ipo_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Cleans numeric values, removes closed/past IPOs, and sorts chronologically."""
+    """Cleans numeric values, applies tiered GMP % & Bid Amount rules, and formats output."""
     if df.empty:
         return df
 
@@ -153,7 +153,6 @@ def process_and_filter_ipo_data(df: pd.DataFrame) -> pd.DataFrame:
     # Filter out completed/past IPOs based on Close date
     if 'Close' in df.columns:
         df['_close_dt'] = normalize_date_series(df['Close'])
-        # Keep only if Close date is today or in the future
         df = df[(df['_close_dt'] >= today) | (df['_close_dt'].isna())].copy()
 
     print(f"Rows remaining after date filter: {len(df)}")
@@ -161,20 +160,53 @@ def process_and_filter_ipo_data(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
 
-    # Extract numeric values for Bid Amount calculation
+    # Numeric extraction for GMP % calculation & Bid Amount
     price_num = pd.to_numeric(df['Price'].astype(str).str.extract(r'(\d+)\s*$')[0], errors='coerce')
     lot_num = pd.to_numeric(df['Lot'].astype(str).str.extract(r'(\d+)')[0], errors='coerce')
+    gmp_val = pd.to_numeric(df['GMP'].astype(str).str.extract(r'(-?\d+(?:\.\d+)?)')[0], errors='coerce').fillna(0)
     
+    bid_amount = price_num * lot_num
+    gmp_pct = (gmp_val / price_num) * 100
+
+    # Tiered Filtering:
+    # 1. Bid Amount < 16,000 -> Keep if GMP % > 10%
+    # 2. Bid Amount > 100,000 -> Keep if GMP % > 35%
+    # 3. 16,000 <= Bid Amount <= 100,000 -> Keep if GMP % > 10%
+    cond_small_bid = (bid_amount < 16000) & (gmp_pct > 10)
+    cond_large_bid = (bid_amount > 100000) & (gmp_pct > 35)
+    cond_mid_bid = (bid_amount >= 16000) & (bid_amount <= 100000) & (gmp_pct > 10)
+
+    df = df[cond_small_bid | cond_large_bid | cond_mid_bid].copy()
+    print(f"Rows remaining after tiered GMP filter: {len(df)}")
+
+    if df.empty:
+        return df
+
+    # Recalculate formatted series for remaining subset
+    price_num = pd.to_numeric(df['Price'].astype(str).str.extract(r'(\d+)\s*$')[0], errors='coerce')
+    lot_num = pd.to_numeric(df['Lot'].astype(str).str.extract(r'(\d+)')[0], errors='coerce')
+    gmp_val = pd.to_numeric(df['GMP'].astype(str).str.extract(r'(-?\d+(?:\.\d+)?)')[0], errors='coerce').fillna(0)
+    gmp_pct = (gmp_val / price_num) * 100
+
+    df['_gmp_pct_val'] = gmp_pct
+    df['GMP (%)'] = gmp_pct.apply(lambda x: f"{x:.1f}%" if pd.notna(x) else "-")
     df['Bid Amount'] = price_num * lot_num
+
+    # Clean Anchor column if present
+    if 'Anchor' in df.columns:
+        df['Anchor'] = df['Anchor'].astype(str).str.strip()
+        df['Anchor'] = df['Anchor'].apply(lambda x: "-" if x in ['', 'nan', 'None', '--', '-'] else x)
+    else:
+        df['Anchor'] = "-"
 
     # Sort chronologically by Close Date (pending dates placed at end)
     if '_close_dt' in df.columns:
         df = df.sort_values(by='_close_dt', ascending=True, na_position='last')
         df = df.drop(columns=['_close_dt'])
 
-    df = df.drop(columns=['Price', 'Lot', 'Anchor'], errors='ignore')
+    df = df.drop(columns=['GMP', 'Price', 'Lot'], errors='ignore')
     
-    cols = ['Name', 'GMP', 'Rating', 'Sub', 'IPO Size', 'Open', 'Close', 'BoA Dt', 'Listing', 'Updated-On', 'Bid Amount']
+    cols = ['Name', 'GMP (%)', 'Rating', 'Sub', 'IPO Size', 'Open', 'Close', 'BoA Dt', 'Listing', 'Updated-On', 'Bid Amount', 'Anchor', '_gmp_pct_val']
     return df[[c for c in cols if c in df.columns]]
 
 def build_html_email(df: pd.DataFrame) -> str:
@@ -183,21 +215,31 @@ def build_html_email(df: pd.DataFrame) -> str:
         <html>
           <body style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
             <h2>Live & Upcoming IPO GMP Updates</h2>
-            <p style="color: #718096;">There are currently no active or upcoming IPOs matching today's criteria.</p>
+            <p style="color: #718096;">There are currently no active or upcoming IPOs matching your filter criteria today.</p>
           </body>
         </html>
         """
 
-    headers_html = "".join(f"<th>{col}</th>" for col in df.columns)
+    display_cols = [c for c in df.columns if c != '_gmp_pct_val']
+    headers_html = "".join(f"<th>{col}</th>" for col in display_cols)
     table_rows = []
 
     for idx, row in df.iterrows():
-        bg_color = "#f7fafc" if idx % 2 == 0 else "#ffffff"
+        gmp_val = row.get('_gmp_pct_val', 0)
+        is_high_gmp = pd.notna(gmp_val) and gmp_val >= 20
+
+        if is_high_gmp:
+            bg_color = "#e6fffa"
+        else:
+            bg_color = "#f7fafc" if idx % 2 == 0 else "#ffffff"
+
         cells = []
-        for col in df.columns:
+        for col in display_cols:
             val = row[col]
             if col == 'Bid Amount':
                 cell_str = format_indian_currency(val)
+            elif col == 'GMP (%)' and is_high_gmp:
+                cell_str = f'<span style="background-color: #276749; color: #ffffff; padding: 3px 8px; border-radius: 4px; font-weight: bold;">{val}</span>'
             elif pd.isna(val) or str(val).lower() == 'nan':
                 cell_str = "-"
             else:
@@ -211,7 +253,9 @@ def build_html_email(df: pd.DataFrame) -> str:
       <head>
         <style>
           body {{ font-family: Arial, sans-serif; font-size: 13px; color: #333; }}
-          h2 {{ color: #1a365d; margin-bottom: 10px; }}
+          h2 {{ color: #1a365d; margin-bottom: 4px; }}
+          .legend {{ font-size: 11px; color: #4a5568; margin-bottom: 12px; }}
+          .legend span {{ color: #276749; font-weight: bold; }}
           .ipo-table {{ border-collapse: collapse; width: 100%; font-size: 12px; }}
           .ipo-table th {{ background-color: #2b6cb0; color: #ffffff; text-align: left; padding: 8px; font-weight: bold; }}
           .ipo-table td {{ border: 1px solid #e2e8f0; padding: 6px 8px; }}
@@ -219,6 +263,7 @@ def build_html_email(df: pd.DataFrame) -> str:
       </head>
       <body>
         <h2>Live & Upcoming IPO GMP Report</h2>
+        <div class="legend">Filter applied: Bid &lt; ₹16K (GMP &gt; 10%) | Bid &gt; ₹1 Lakh (GMP &gt; 35%). <span>Rows with GMP % ≥ 20% are highlighted in green.</span></div>
         <table class="ipo-table">
           <thead><tr>{headers_html}</tr></thead>
           <tbody>{"".join(table_rows)}</tbody>
@@ -236,12 +281,14 @@ def send_email(html_body: str, is_empty: bool, df: pd.DataFrame):
     if not sender_email or not app_password:
         raise ValueError("Missing SENDER_EMAIL or APP_PASSWORD environment variables.")
 
+    display_df = df.drop(columns=['_gmp_pct_val'], errors='ignore')
+
     msg = EmailMessage()
     msg["From"] = sender_email
     msg["To"] = ", ".join(recipients_list)
-    msg["Subject"] = "IPO GMP Report - No Active IPOs Today" if is_empty else "Live & Upcoming IPO GMP Report"
+    msg["Subject"] = "IPO GMP Report - No Active IPOs Meeting Criteria" if is_empty else "Live & Upcoming IPO GMP Report"
     
-    msg.set_content("No active IPOs found today." if is_empty else f"Live IPO GMP Updates:\n\n{df.to_string()}")
+    msg.set_content("No active IPOs meeting criteria found today." if is_empty else f"Live IPO GMP Updates:\n\n{display_df.to_string()}")
     msg.add_alternative(html_body, subtype='html')
 
     with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
