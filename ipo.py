@@ -40,6 +40,23 @@ def retry_on_exception(retries=3, delay=5, backoff=2):
         return wrapper
     return decorator
 
+def format_indian_currency(val) -> str:
+    """Formats numeric values into Indian numbering system (e.g. 113000 -> ₹1,13,000)."""
+    if pd.isna(val) or val <= 0:
+        return "-"
+    s = str(int(round(val)))
+    if len(s) <= 3:
+        return f"₹{s}"
+    last_three = s[-3:]
+    remaining = s[:-3]
+    res = ""
+    while len(remaining) > 2:
+        res = "," + remaining[-2:] + res
+        remaining = remaining[:-2]
+    if remaining:
+        res = remaining + res
+    return f"₹{res},{last_three}"
+
 def get_browser_driver() -> webdriver.Chrome:
     """Configures headless Chrome with anti-bot evasion settings."""
     options = Options()
@@ -93,27 +110,36 @@ def fetch_ipo_dataframe() -> pd.DataFrame:
     return target_df
 
 def normalize_date_series(series: pd.Series) -> pd.Series:
-    """Parses mixed date strings like '18-Aug' or '18-08-2026' into Datetime objects."""
+    """Parses date strings into Datetime objects; treats 'Closed' text as past date."""
     current_year = pd.Timestamp.today().year
     
     def parse_val(val):
-        if pd.isna(val) or not str(val).strip() or str(val).strip() in ['--', '-', 'N/A', 'nan']:
+        if pd.isna(val) or not str(val).strip():
             return pd.NaT
-        val_str = str(val).strip()
-        if re.match(r'^\d{1,2}-[A-Za-z]{3}$', val_str):
-            val_str = f"{val_str}-{current_year}"
-        return pd.to_datetime(val_str, errors='coerce', format='mixed')
+        val_str = str(val).strip().lower()
+        if 'closed' in val_str:
+            return pd.Timestamp('2000-01-01')  # Guarantee filter out
+        
+        match = re.search(r'(\d{1,2}-[A-Za-z]{3}(?:-\d{2,4})?|\d{1,2}-\d{1,2}(?:-\d{2,4})?)', str(val))
+        if not match:
+            return pd.NaT
+            
+        clean_date = match.group(1)
+        if re.match(r'^\d{1,2}-[A-Za-z]{3}$', clean_date, re.IGNORECASE):
+            clean_date = f"{clean_date}-{current_year}"
+            
+        return pd.to_datetime(clean_date, errors='coerce', format='mixed')
 
     return series.apply(parse_val)
 
 def process_and_filter_ipo_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Cleans numeric values, filters active IPOs, and sorts chronologically by close date."""
+    """Cleans numeric values, removes closed/past IPOs, and sorts chronologically."""
     if df.empty:
         return df
 
     print(f"Raw rows before filtering: {len(df)}")
 
-    # Remove completely empty rows or rows missing an IPO Name
+    # Remove invalid / duplicate header rows
     if 'Name' in df.columns:
         df = df[df['Name'].notna()].copy()
         df['Name'] = df['Name'].astype(str).str.strip()
@@ -122,11 +148,12 @@ def process_and_filter_ipo_data(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
 
-    # Parse Close dates into datetime objects for filtering and sorting
+    today = pd.Timestamp.today().normalize()
+
+    # Filter out completed/past IPOs based on Close date
     if 'Close' in df.columns:
         df['_close_dt'] = normalize_date_series(df['Close'])
-        today = pd.Timestamp.today().normalize()
-        # Keep if Close date is today or in the future, or pending (NaT)
+        # Keep only if Close date is today or in the future
         df = df[(df['_close_dt'] >= today) | (df['_close_dt'].isna())].copy()
 
     print(f"Rows remaining after date filter: {len(df)}")
@@ -134,34 +161,20 @@ def process_and_filter_ipo_data(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
 
-    # Extract numeric values safely
+    # Extract numeric values for Bid Amount calculation
     price_num = pd.to_numeric(df['Price'].astype(str).str.extract(r'(\d+)\s*$')[0], errors='coerce')
     lot_num = pd.to_numeric(df['Lot'].astype(str).str.extract(r'(\d+)')[0], errors='coerce')
-    gmp_val = pd.to_numeric(df['GMP'].astype(str).str.extract(r'(-?\d+(?:\.\d+)?)')[0], errors='coerce').fillna(0)
-    sub_num = pd.to_numeric(df['Sub'].astype(str).str.extract(r'(\d+(?:\.\d+)?)')[0], errors='coerce').fillna(0)
     
-    gmp_pct = (gmp_val / price_num) * 100
-
-    def evaluate_row(pct, val, sub):
-        if pd.isna(pct) or val < 0 or pct < 0:
-            return "Avoid"
-        elif pct >= 15 or (pct >= 10 and sub >= 3):
-            return "Apply (Strong)"
-        elif pct > 0 or sub >= 1:
-            return "May Apply"
-        return "Avoid / Risky"
-
-    df['Verdict'] = [evaluate_row(p, v, s) for p, v, s in zip(gmp_pct, gmp_val, sub_num)]
     df['Bid Amount'] = price_num * lot_num
 
-    # Sort chronologically by Close Date (pending dates placed at the end)
+    # Sort chronologically by Close Date (pending dates placed at end)
     if '_close_dt' in df.columns:
         df = df.sort_values(by='_close_dt', ascending=True, na_position='last')
         df = df.drop(columns=['_close_dt'])
 
-    df = df.drop(columns=['Price', 'Lot'], errors='ignore')
+    df = df.drop(columns=['Price', 'Lot', 'Anchor'], errors='ignore')
     
-    cols = ['Name', 'Verdict', 'GMP', 'Rating', 'Sub', 'IPO Size', 'Open', 'Close', 'BoA Dt', 'Listing', 'Updated-On', 'Anchor', 'Bid Amount']
+    cols = ['Name', 'GMP', 'Rating', 'Sub', 'IPO Size', 'Open', 'Close', 'BoA Dt', 'Listing', 'Updated-On', 'Bid Amount']
     return df[[c for c in cols if c in df.columns]]
 
 def build_html_email(df: pd.DataFrame) -> str:
@@ -178,36 +191,20 @@ def build_html_email(df: pd.DataFrame) -> str:
     headers_html = "".join(f"<th>{col}</th>" for col in df.columns)
     table_rows = []
 
-    for _, row in df.iterrows():
-        verdict = str(row.get('Verdict', ''))
-        if "Apply (Strong)" in verdict:
-            verdict_badge = '<span style="background-color: #276749; color: #ffffff; padding: 3px 7px; border-radius: 4px; font-weight: bold;">Apply</span>'
-            row_style = 'style="background-color: #f0fff4;"'
-        elif "May Apply" in verdict:
-            verdict_badge = '<span style="background-color: #d69e2e; color: #ffffff; padding: 3px 7px; border-radius: 4px; font-weight: bold;">May Apply</span>'
-            row_style = 'style="background-color: #fffff0;"'
-        else:
-            verdict_badge = '<span style="background-color: #c53030; color: #ffffff; padding: 3px 7px; border-radius: 4px; font-weight: bold;">Avoid</span>'
-            row_style = 'style="background-color: #fff5f5;"'
-
-        bid_val = row.get('Bid Amount', 0)
-        formatted_bid = f"₹{bid_val:,.0f}" if pd.notnull(bid_val) and bid_val > 0 else "-"
-
+    for idx, row in df.iterrows():
+        bg_color = "#f7fafc" if idx % 2 == 0 else "#ffffff"
         cells = []
         for col in df.columns:
             val = row[col]
-            # Replace literal NaN or NaT values with empty dash in table cell
-            if pd.isna(val) or str(val).lower() == 'nan':
+            if col == 'Bid Amount':
+                cell_str = format_indian_currency(val)
+            elif pd.isna(val) or str(val).lower() == 'nan':
                 cell_str = "-"
-            elif col == 'Verdict':
-                cell_str = verdict_badge
-            elif col == 'Bid Amount':
-                cell_str = formatted_bid
             else:
                 cell_str = str(val)
             cells.append(f"<td>{cell_str}</td>")
             
-        table_rows.append(f"<tr {row_style}>{''.join(cells)}</tr>")
+        table_rows.append(f'<tr style="background-color: {bg_color};">{"".join(cells)}</tr>')
 
     return f"""
     <html>
@@ -221,8 +218,7 @@ def build_html_email(df: pd.DataFrame) -> str:
         </style>
       </head>
       <body>
-        <h2>Live & Upcoming IPO GMP Report & Verdict</h2>
-        <p>Investment recommendations generated based on GMP % return and subscription rates:</p>
+        <h2>Live & Upcoming IPO GMP Report</h2>
         <table class="ipo-table">
           <thead><tr>{headers_html}</tr></thead>
           <tbody>{"".join(table_rows)}</tbody>
@@ -243,7 +239,7 @@ def send_email(html_body: str, is_empty: bool, df: pd.DataFrame):
     msg = EmailMessage()
     msg["From"] = sender_email
     msg["To"] = ", ".join(recipients_list)
-    msg["Subject"] = "IPO GMP Report - No Active IPOs Today" if is_empty else "Live & Upcoming IPO GMP Report with Verdict"
+    msg["Subject"] = "IPO GMP Report - No Active IPOs Today" if is_empty else "Live & Upcoming IPO GMP Report"
     
     msg.set_content("No active IPOs found today." if is_empty else f"Live IPO GMP Updates:\n\n{df.to_string()}")
     msg.add_alternative(html_body, subtype='html')
