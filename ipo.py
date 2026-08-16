@@ -10,18 +10,19 @@ import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
-# Suppress minor Pandas warnings
 warnings.filterwarnings('ignore', category=UserWarning)
 
-# Configuration Constants
 URL = 'https://www.investorgain.com/report/ipo-gmp-live/331/'
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 465
 
 def retry_on_exception(retries=3, delay=5, backoff=2):
-    """Decorator that retries a function upon failure with exponential backoff."""
+    """Retries a function upon failure with exponential backoff."""
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -40,61 +41,101 @@ def retry_on_exception(retries=3, delay=5, backoff=2):
     return decorator
 
 def get_browser_driver() -> webdriver.Chrome:
-    """Configures and returns a lightweight, headless Chrome browser instance."""
+    """Configures headless Chrome with anti-bot evasion settings."""
     options = Options()
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--disable-extensions")
-    options.add_argument("--blink-settings=imagesEnabled=false")  # Speed up page loads by disabling images
+    options.add_argument("--window-size=1920,1080")
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     
     return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
 @retry_on_exception(retries=3, delay=5, backoff=2)
 def fetch_ipo_dataframe() -> pd.DataFrame:
-    """Scrapes raw IPO data from the target URL with automatic retry capability."""
+    """Scrapes raw IPO table after waiting explicitly for dynamic content to render."""
     driver = get_browser_driver()
     try:
         driver.get(URL)
+        # Wait up to 15s for the table element to load
+        WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located((By.TAG_NAME, "table"))
+        )
+        time.sleep(2)  # Extra buffer for dynamic JS rendering
         html_content = driver.page_source
     finally:
-        driver.quit()  # Guarantees browser process termination
+        driver.quit()
 
     tables = pd.read_html(StringIO(html_content))
-    
-    # Locate the correct IPO table based on minimum expected column count
+    print(f"Scraped {len(tables)} tables from page.")
+
     target_df = None
-    for tbl in tables:
-        if len(tbl.columns) >= 10:
+    for idx, tbl in enumerate(tables):
+        # Convert column names to string for matching
+        col_str = " ".join([str(c) for c in tbl.columns]).lower()
+        if 'gmp' in col_str or 'ipo' in col_str:
             target_df = tbl
+            print(f"Matched main IPO table at index {idx} with shape {tbl.shape}")
             break
 
     if target_df is None:
+        print("[Warning] No table matching IPO criteria was found.")
         return pd.DataFrame()
 
+    # Flatten multi-index columns if present
+    if isinstance(target_df.columns, pd.MultiIndex):
+        target_df.columns = [' '.join(col).strip() for col in target_df.columns.values]
+
+    # Standardize column names dynamically based on match length
     if len(target_df.columns) == 13:
         target_df.columns = [
             'Name', 'GMP', 'Rating', 'Sub', 'Price', 'IPO Size',
             'Lot', 'Open', 'Close', 'BoA Dt', 'Listing', 'Updated-On', 'Anchor'
         ]
+    
     return target_df
 
+def normalize_date_series(series: pd.Series) -> pd.Series:
+    """Parses mixed date strings like '18-Aug' or '18-08-2026' into Datetime objects."""
+    current_year = pd.Timestamp.today().year
+    
+    def parse_val(val):
+        if pd.isna(val) or not str(val).strip() or str(val).strip() in ['--', '-', 'N/A']:
+            return pd.NaT
+        val_str = str(val).strip()
+        # If year is missing (e.g., "18-Aug"), append current year
+        if re.match(r'^\d{1,2}-[A-Za-z]{3}$', val_str):
+            val_str = f"{val_str}-{current_year}"
+        return pd.to_datetime(val_str, errors='coerce', format='mixed')
+
+    return series.apply(parse_val)
+
 def process_and_filter_ipo_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Filters, cleans, calculates metrics, and assigns verdicts to the IPO data."""
+    """Cleans numeric values and filters out old, closed IPOs."""
     if df.empty:
         return df
 
-    # Filter out past listing dates
+    print(f"Raw rows before filtering: {len(df)}")
+
+    # Clean header/footer duplicate rows from HTML table scrapings
+    if 'Name' in df.columns:
+        df = df[df['Name'].astype(str).str.lower() != 'name'].copy()
+
     today = pd.Timestamp.today().normalize()
-    parsed_dates = pd.to_datetime(df['Listing'], errors='coerce', format='mixed')
-    df = df[(parsed_dates >= today) | (parsed_dates.isna())].copy()
+
+    # Filter based on Close Date or Listing Date
+    if 'Close' in df.columns:
+        close_dates = normalize_date_series(df['Close'])
+        # Keep if Close date is today or in the future, or if date is pending/unannounced
+        df = df[(close_dates >= today) | (close_dates.isna())].copy()
+
+    print(f"Rows remaining after date filter: {len(df)}")
 
     if df.empty:
         return df
 
-    # Extract numeric values using vectorized regex extraction
+    # Extract numeric values safely
     price_num = pd.to_numeric(df['Price'].astype(str).str.extract(r'(\d+)\s*$')[0], errors='coerce')
     lot_num = pd.to_numeric(df['Lot'].astype(str).str.extract(r'(\d+)')[0], errors='coerce')
     gmp_val = pd.to_numeric(df['GMP'].astype(str).str.extract(r'(-?\d+(?:\.\d+)?)')[0], errors='coerce').fillna(0)
@@ -102,7 +143,6 @@ def process_and_filter_ipo_data(df: pd.DataFrame) -> pd.DataFrame:
     
     gmp_pct = (gmp_val / price_num) * 100
 
-    # Verdict recommendation engine logic
     def evaluate_row(pct, val, sub):
         if val < 0 or pct < 0:
             return "Avoid"
@@ -115,14 +155,12 @@ def process_and_filter_ipo_data(df: pd.DataFrame) -> pd.DataFrame:
     df['Verdict'] = [evaluate_row(p, v, s) for p, v, s in zip(gmp_pct, gmp_val, sub_num)]
     df['Bid Amount'] = price_num * lot_num
 
-    # Column cleanup and sorting by close date
-    df = df.drop(columns=['Price', 'Lot']).sort_values(by='Close', ascending=True)
+    df = df.drop(columns=['Price', 'Lot'], errors='ignore')
     
     cols = ['Name', 'Verdict', 'GMP', 'Rating', 'Sub', 'IPO Size', 'Open', 'Close', 'BoA Dt', 'Listing', 'Updated-On', 'Anchor', 'Bid Amount']
     return df[[c for c in cols if c in df.columns]]
 
 def build_html_email(df: pd.DataFrame) -> str:
-    """Generates formatted HTML with styled badges and data tables for the email body."""
     if df.empty:
         return """
         <html>
@@ -137,7 +175,7 @@ def build_html_email(df: pd.DataFrame) -> str:
     table_rows = []
 
     for _, row in df.iterrows():
-        verdict = row['Verdict']
+        verdict = str(row.get('Verdict', ''))
         if "Apply (Strong)" in verdict:
             verdict_badge = '<span style="background-color: #276749; color: #ffffff; padding: 3px 7px; border-radius: 4px; font-weight: bold;">Apply</span>'
             row_style = 'style="background-color: #f0fff4;"'
@@ -148,7 +186,7 @@ def build_html_email(df: pd.DataFrame) -> str:
             verdict_badge = '<span style="background-color: #c53030; color: #ffffff; padding: 3px 7px; border-radius: 4px; font-weight: bold;">Avoid</span>'
             row_style = 'style="background-color: #fff5f5;"'
 
-        bid_val = row['Bid Amount']
+        bid_val = row.get('Bid Amount', 0)
         formatted_bid = f"₹{bid_val:,.0f}" if pd.notnull(bid_val) and bid_val > 0 else "-"
 
         cells = []
@@ -186,7 +224,6 @@ def build_html_email(df: pd.DataFrame) -> str:
     """
 
 def send_email(html_body: str, is_empty: bool, df: pd.DataFrame):
-    """Logs into SMTP server and sends the multi-part plain/HTML email."""
     sender_email = os.environ.get("SENDER_EMAIL")
     app_password = os.environ.get("APP_PASSWORD")
     recipients_raw = os.environ.get("RECIPIENT_EMAILS", "testing0357a@gmail.com")
