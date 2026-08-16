@@ -1,4 +1,4 @@
-name: Daily Email Sender
+name: Daily_Email_Trigger
 
 on:
   schedule:
