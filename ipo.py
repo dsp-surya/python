@@ -58,11 +58,10 @@ def fetch_ipo_dataframe() -> pd.DataFrame:
     driver = get_browser_driver()
     try:
         driver.get(URL)
-        # Wait up to 15s for the table element to load
         WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.TAG_NAME, "table"))
         )
-        time.sleep(2)  # Extra buffer for dynamic JS rendering
+        time.sleep(2)
         html_content = driver.page_source
     finally:
         driver.quit()
@@ -72,7 +71,6 @@ def fetch_ipo_dataframe() -> pd.DataFrame:
 
     target_df = None
     for idx, tbl in enumerate(tables):
-        # Convert column names to string for matching
         col_str = " ".join([str(c) for c in tbl.columns]).lower()
         if 'gmp' in col_str or 'ipo' in col_str:
             target_df = tbl
@@ -83,11 +81,9 @@ def fetch_ipo_dataframe() -> pd.DataFrame:
         print("[Warning] No table matching IPO criteria was found.")
         return pd.DataFrame()
 
-    # Flatten multi-index columns if present
     if isinstance(target_df.columns, pd.MultiIndex):
         target_df.columns = [' '.join(col).strip() for col in target_df.columns.values]
 
-    # Standardize column names dynamically based on match length
     if len(target_df.columns) == 13:
         target_df.columns = [
             'Name', 'GMP', 'Rating', 'Sub', 'Price', 'IPO Size',
@@ -101,10 +97,9 @@ def normalize_date_series(series: pd.Series) -> pd.Series:
     current_year = pd.Timestamp.today().year
     
     def parse_val(val):
-        if pd.isna(val) or not str(val).strip() or str(val).strip() in ['--', '-', 'N/A']:
+        if pd.isna(val) or not str(val).strip() or str(val).strip() in ['--', '-', 'N/A', 'nan']:
             return pd.NaT
         val_str = str(val).strip()
-        # If year is missing (e.g., "18-Aug"), append current year
         if re.match(r'^\d{1,2}-[A-Za-z]{3}$', val_str):
             val_str = f"{val_str}-{current_year}"
         return pd.to_datetime(val_str, errors='coerce', format='mixed')
@@ -112,23 +107,27 @@ def normalize_date_series(series: pd.Series) -> pd.Series:
     return series.apply(parse_val)
 
 def process_and_filter_ipo_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Cleans numeric values and filters out old, closed IPOs."""
+    """Cleans numeric values, filters active IPOs, and sorts chronologically by close date."""
     if df.empty:
         return df
 
     print(f"Raw rows before filtering: {len(df)}")
 
-    # Clean header/footer duplicate rows from HTML table scrapings
+    # Remove completely empty rows or rows missing an IPO Name
     if 'Name' in df.columns:
-        df = df[df['Name'].astype(str).str.lower() != 'name'].copy()
+        df = df[df['Name'].notna()].copy()
+        df['Name'] = df['Name'].astype(str).str.strip()
+        df = df[~df['Name'].str.lower().isin(['name', '', '--', '-', 'nan'])].copy()
 
-    today = pd.Timestamp.today().normalize()
+    if df.empty:
+        return df
 
-    # Filter based on Close Date or Listing Date
+    # Parse Close dates into datetime objects for filtering and sorting
     if 'Close' in df.columns:
-        close_dates = normalize_date_series(df['Close'])
-        # Keep if Close date is today or in the future, or if date is pending/unannounced
-        df = df[(close_dates >= today) | (close_dates.isna())].copy()
+        df['_close_dt'] = normalize_date_series(df['Close'])
+        today = pd.Timestamp.today().normalize()
+        # Keep if Close date is today or in the future, or pending (NaT)
+        df = df[(df['_close_dt'] >= today) | (df['_close_dt'].isna())].copy()
 
     print(f"Rows remaining after date filter: {len(df)}")
 
@@ -144,7 +143,7 @@ def process_and_filter_ipo_data(df: pd.DataFrame) -> pd.DataFrame:
     gmp_pct = (gmp_val / price_num) * 100
 
     def evaluate_row(pct, val, sub):
-        if val < 0 or pct < 0:
+        if pd.isna(pct) or val < 0 or pct < 0:
             return "Avoid"
         elif pct >= 15 or (pct >= 10 and sub >= 3):
             return "Apply (Strong)"
@@ -154,6 +153,11 @@ def process_and_filter_ipo_data(df: pd.DataFrame) -> pd.DataFrame:
 
     df['Verdict'] = [evaluate_row(p, v, s) for p, v, s in zip(gmp_pct, gmp_val, sub_num)]
     df['Bid Amount'] = price_num * lot_num
+
+    # Sort chronologically by Close Date (pending dates placed at the end)
+    if '_close_dt' in df.columns:
+        df = df.sort_values(by='_close_dt', ascending=True, na_position='last')
+        df = df.drop(columns=['_close_dt'])
 
     df = df.drop(columns=['Price', 'Lot'], errors='ignore')
     
@@ -191,13 +195,17 @@ def build_html_email(df: pd.DataFrame) -> str:
 
         cells = []
         for col in df.columns:
-            if col == 'Verdict':
-                val = verdict_badge
+            val = row[col]
+            # Replace literal NaN or NaT values with empty dash in table cell
+            if pd.isna(val) or str(val).lower() == 'nan':
+                cell_str = "-"
+            elif col == 'Verdict':
+                cell_str = verdict_badge
             elif col == 'Bid Amount':
-                val = formatted_bid
+                cell_str = formatted_bid
             else:
-                val = row[col]
-            cells.append(f"<td>{val}</td>")
+                cell_str = str(val)
+            cells.append(f"<td>{cell_str}</td>")
             
         table_rows.append(f"<tr {row_style}>{''.join(cells)}</tr>")
 
