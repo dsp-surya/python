@@ -283,7 +283,7 @@ def send_email(html_body: str, is_empty: bool, df: pd.DataFrame):
 
     msg = EmailMessage()
     msg["From"] = sender_email
-    msg["To"] = ", ".join(recipients_list)
+    msg["To"] = sender_email  
     msg["Subject"] = "IPO GMP Report - No Active IPOs Meeting Criteria" if is_empty else "Live & Upcoming IPO GMP Report"
     
     msg.set_content("No active IPOs meeting criteria found today." if is_empty else f"Live IPO GMP Updates:\n\n{display_df.to_string()}")
@@ -291,7 +291,8 @@ def send_email(html_body: str, is_empty: bool, df: pd.DataFrame):
 
     with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
         server.login(sender_email, app_password)
-        server.send_message(msg)
+        # Passing recipients_list to to_addrs sends it to them secretly as BCC
+        server.send_message(msg, to_addrs=recipients_list)
 
 def main():
     print("Fetching IPO data...")
