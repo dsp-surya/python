@@ -2,7 +2,7 @@ name: Daily_Email_Trigger
 
 on:
   schedule:
-    - cron: '30 5,15 * * * UTC'
+    - cron: '0 4,13 * * *'
   workflow_dispatch:
 
 jobs:
