@@ -9,11 +9,9 @@ from email.message import EmailMessage
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 
 warnings.filterwarnings('ignore', category=UserWarning)
 
@@ -58,7 +56,7 @@ def format_indian_currency(val) -> str:
     return f"₹{res},{last_three}"
 
 def get_browser_driver() -> webdriver.Chrome:
-    """Configures headless Chrome with anti-bot evasion settings."""
+    """Configures headless Chrome with anti-bot evasion settings via native Selenium Manager."""
     options = Options()
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
@@ -67,7 +65,7 @@ def get_browser_driver() -> webdriver.Chrome:
     options.add_argument("--window-size=1920,1080")
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     
-    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    return webdriver.Chrome(options=options)
 
 @retry_on_exception(retries=3, delay=5, backoff=2)
 def fetch_ipo_dataframe() -> pd.DataFrame:
@@ -275,7 +273,7 @@ def build_html_email(df: pd.DataFrame) -> str:
 def send_email(html_body: str, is_empty: bool, df: pd.DataFrame):
     sender_email = os.environ.get("SENDER_EMAIL")
     app_password = os.environ.get("APP_PASSWORD")
-    recipients_raw = os.environ.get("RECIPIENT_EMAILS", "testing0357a@gmail.com")
+    recipients_raw = os.environ.get("RECIPIENT_EMAILS","SENDER_EMAIL")
     recipients_list = [e.strip() for e in recipients_raw.split(",") if e.strip()]
 
     if not sender_email or not app_password:
@@ -285,7 +283,7 @@ def send_email(html_body: str, is_empty: bool, df: pd.DataFrame):
 
     msg = EmailMessage()
     msg["From"] = sender_email
-    msg["To"] = ", ".join(recipients_list)
+    msg["To"] = sender_email  
     msg["Subject"] = "IPO GMP Report - No Active IPOs Meeting Criteria" if is_empty else "Live & Upcoming IPO GMP Report"
     
     msg.set_content("No active IPOs meeting criteria found today." if is_empty else f"Live IPO GMP Updates:\n\n{display_df.to_string()}")
@@ -293,7 +291,8 @@ def send_email(html_body: str, is_empty: bool, df: pd.DataFrame):
 
     with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
         server.login(sender_email, app_password)
-        server.send_message(msg)
+        # Passing recipients_list to to_addrs sends it to them secretly as BCC
+        server.send_message(msg, to_addrs=recipients_list)
 
 def main():
     print("Fetching IPO data...")
