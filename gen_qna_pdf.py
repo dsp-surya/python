@@ -15,7 +15,7 @@ from fpdf import FPDF
 from pypdf import PdfReader, PdfWriter
 from google import genai
 from google.genai import types
-from google.genai.errors import ClientError
+from google.genai.errors import ClientError, ServerError
 
 # Optional dependencies for standalone DOCX scaling (Option 3)
 try:
@@ -29,6 +29,19 @@ except ImportError:
 
 # Initialize Gemini Client (reads $env:GEMINI_API_KEY)
 client = genai.Client()
+
+# List of models to rotate through sequentially on Rate Limit (429), Model Not Found (404), or High Demand (503)
+MODELS = [
+    "models/gemini-2.5-flash",
+    "models/gemini-3.5-flash",
+    "models/gemini-3.6-flash",
+    "models/gemini-3.7-flash",
+    "models/gemini-3.8-flash",
+    "models/gemini-2.5-flash-lite",
+    "models/gemini-3.5-flash-lite",
+    "models/gemini-3.1-flash-lite"
+]
+current_model_idx = 0
 
 
 def sanitize_filename(name: str) -> str:
@@ -84,32 +97,82 @@ def split_scanned_pdf(input_pdf_path: str, sections_info: list[dict], temp_outpu
     return split_data
 
 
-def call_gemini_with_retry(contents, config=None, max_retries=7, initial_delay=15):
-    """Calls Gemini API with exponential backoff to handle 429 Rate Limit errors."""
+def call_gemini_with_retry(contents, config=None, max_retries=20, initial_delay=15):
+    """
+    Calls Gemini API with exponential backoff and automatic model rotation.
+    Handles:
+      - 404 (Not Found / Deprecated): Switch model instantly without delay.
+      - 429 (Rate Limit): Switch model and wait exponential delay.
+      - 503 (Server High Demand / Unavailable): Switch model and wait brief delay.
+    
+    Option 2: Pauses for 10s if a full cycle through all models completes and wraps around to 0.
+    """
+    global current_model_idx
     delay = initial_delay
 
     for attempt in range(1, max_retries + 1):
+        active_model = MODELS[current_model_idx]
         try:
             response = client.models.generate_content(
-                model="models/gemini-3.5-flash-lite",
+                model=active_model,
                 contents=contents,
                 config=config
             )
             return response
+
         except ClientError as e:
-            if e.code == 429:
-                print(f"⚠️ Rate limit hit (429). Sleeping {delay}s before retry ({attempt}/{max_retries})...")
+            if e.code == 404:
+                # Model unavailable or deprecated; immediately switch without delay
+                current_model_idx = (current_model_idx + 1) % len(MODELS)
+                next_model = MODELS[current_model_idx]
+                print(f"❌ Model {active_model} returned 404 NOT_FOUND. Switching immediately to {next_model}...")
+
+                # Option 2: Check if cycle wrapped back to the start
+                if current_model_idx == 0:
+                    print("⏳ Completed full model rotation. Pausing 10s before restarting queue...")
+                    time.sleep(10)
+
+            elif e.code == 429:
+                # Rate limited; switch model and apply backoff delay
+                current_model_idx = (current_model_idx + 1) % len(MODELS)
+                next_model = MODELS[current_model_idx]
+                print(f"⚠️ Rate limit hit (429) on {active_model}.")
+                print(f"   🔄 Switching to {next_model}. Waiting {delay}s before retry ({attempt}/{max_retries})...")
                 time.sleep(delay)
                 delay *= 2
+
+                # Option 2: Check if cycle wrapped back to the start
+                if current_model_idx == 0:
+                    print("⏳ Completed full model rotation. Pausing 10s for quota recovery...")
+                    time.sleep(10)
+
             else:
                 raise e
-    raise Exception("❌ Exhausted retries. Daily quota (RPD) finished. Wait for daily reset.")
+
+        except ServerError as e:
+            if e.code == 503:
+                # High traffic / server load on this specific model; switch and try another
+                current_model_idx = (current_model_idx + 1) % len(MODELS)
+                next_model = MODELS[current_model_idx]
+                print(f"🔥 Model {active_model} returned 503 UNAVAILABLE (High Demand).")
+                print(f"   🔄 Switching to {next_model}. Waiting 5s before retry ({attempt}/{max_retries})...")
+                time.sleep(5)
+
+                # Option 2: Check if cycle wrapped back to the start
+                if current_model_idx == 0:
+                    print("⏳ Completed full model rotation. Pausing 10s for capacity reset...")
+                    time.sleep(10)
+
+            else:
+                raise e
+
+    raise Exception("❌ Exhausted retries across all configured models. Quotas finished, server down, or all models overloaded.")
 
 
 def find_sections_with_gemini(pdf_path: str) -> list[dict]:
     """Scans visual layout to split section boundaries safely."""
     print(f"Scanning visual layout with Gemini: {os.path.basename(pdf_path)}...")
-    
+
     file_ref = client.files.upload(
         file=pdf_path,
         config=types.UploadFileConfig(mime_type="application/pdf")
@@ -130,7 +193,7 @@ def find_sections_with_gemini(pdf_path: str) -> list[dict]:
     )
 
     config = types.GenerateContentConfig(response_mime_type="application/json")
-    
+
     try:
         response = call_gemini_with_retry(contents=[file_ref, prompt], config=config)
     finally:
@@ -138,7 +201,7 @@ def find_sections_with_gemini(pdf_path: str) -> list[dict]:
             client.files.delete(name=file_ref.name)
         except Exception:
             pass
-    
+
     time.sleep(6)
 
     try:
@@ -228,12 +291,12 @@ def create_telugu_pdf(text_content: str, output_pdf_path: str, font_path: str = 
 
     # Standard A4 layout (210mm x 297mm)
     pdf = FPDF(orientation='P', unit='mm', format='A4')
-    
+
     # Print Margins
     pdf.set_margins(left=15, top=15, right=15)
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
-    
+
     # Enable HarfBuzz complex script shaping for proper Telugu glyph rendering
     try:
         pdf.set_text_shaping(True)
@@ -241,21 +304,21 @@ def create_telugu_pdf(text_content: str, output_pdf_path: str, font_path: str = 
         pass
 
     pdf.add_font("TeluguFont", style="", fname=font_path)
-    
+
     # Base Font Size & Pure Black Ink
     pdf.set_font("TeluguFont", size=base_font_size)
     pdf.set_text_color(0, 0, 0)
-    
-    printable_width = pdf.epw 
+
+    printable_width = pdf.epw
 
     lines = text_content.splitlines()
-    
+
     for line in lines:
         clean_line = line.strip()
         if not clean_line:
             pdf.ln(int(4 * scale_factor))  # Scaled paragraph gap
             continue
-            
+
         pdf.set_x(pdf.l_margin)
 
         # Format Question Line
@@ -265,20 +328,20 @@ def create_telugu_pdf(text_content: str, output_pdf_path: str, font_path: str = 
             pdf.set_x(pdf.l_margin)
             pdf.multi_cell(printable_width, line_height, text=clean_line)
             pdf.ln(1)
-            
+
         # Format Answer Line
         elif clean_line.startswith("సమాధానం:"):
             pdf.set_font("TeluguFont", size=base_font_size)
             pdf.multi_cell(printable_width, line_height, text=clean_line)
             pdf.ln(2)
-            
+
         # Format Page/Section Markers
         elif clean_line.startswith("---"):
             pdf.set_font("TeluguFont", size=header_font_size)
             pdf.multi_cell(printable_width, header_line_height, text=clean_line)
             pdf.set_font("TeluguFont", size=base_font_size)
             pdf.ln(2)
-            
+
         else:
             pdf.multi_cell(printable_width, line_height, text=clean_line)
 
@@ -290,7 +353,7 @@ def scale_docx_text(docx_path, scale_factor=1.80):
     """Opens a Word document, scales all font sizes by scale_factor, and saves back."""
     if not DOCX_SUPPORT:
         raise ImportError("pdf2docx, python-docx, and docx2pdf must be installed to use this feature.")
-    
+
     doc = Document(docx_path)
 
     def adjust_font(run):
@@ -331,7 +394,7 @@ def process_pdfs_via_docx(input_dir, output_dir, scale_factor=1.80):
     for pdf_path in pdf_files:
         filename = os.path.basename(pdf_path)
         base_name = os.path.splitext(filename)[0]
-        
+
         temp_docx = os.path.join(output_dir, f"{base_name}_temp.docx")
         final_pdf = os.path.join(output_dir, f"{base_name}_180pct.pdf")
 
@@ -422,21 +485,21 @@ def process_directory_of_pdfs(input_dir: str, output_dir: str, temp_dir: str = "
 if __name__ == "__main__":
     # --- CONFIGURATION ---
     SCALE_FACTOR = 1.80  # 180% Font Scaling
-    
+
     # Mode 1 Defaults (Single PDF Section Processing)
-    SINGLE_INPUT_PDF = "ancient.pdf"
+    SINGLE_INPUT_PDF = "polity_1.pdf"
     SPLIT_SECTIONS_DIR = "temp_split_sections"
-    SINGLE_OUTPUT_DIR = "ancient_scale"
+    SINGLE_OUTPUT_DIR = "test"
 
     # Mode 2 & 3 Defaults (Directory Batch Processing)
-    INPUT_BATCH_DIR = r"D:\Repos\Python\input_pdfs"
-    OUTPUT_BATCH_DIR = r"D:\Repos\Python\output_pdfs_scale"
+    INPUT_BATCH_DIR = r"D:\Repos\Python\human"
+    OUTPUT_BATCH_DIR = r"D:\Repos\Python\human_scale"
 
     print("Select Mode:")
     print("1. Section-based Q&A generation from a single PDF (Direct 180% Large-Text PDF)")
     print("2. Batch Q&A generation for all PDFs in a directory (Direct 180% Large-Text PDF)")
     print("3. External PDF-to-Word font scaling (pdf2docx -> DOCX 180% -> docx2pdf)")
-    
+
     choice = input("Enter option (1, 2, or 3): ").strip()
 
     if choice == "1":
