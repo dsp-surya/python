@@ -4,6 +4,7 @@ import re
 import time
 import glob
 import logging
+import shutil
 
 # Suppress root logger and all Google / HTTP client sub-loggers
 logging.basicConfig(level=logging.WARNING)
@@ -27,10 +28,17 @@ try:
 except ImportError:
     DOCX_SUPPORT = False
 
-# Initialize Gemini Client (reads $env:GEMINI_API_KEY)
-client = genai.Client()
+# --- GEMINI API KEY INITIALIZATION ---
+api_key = os.environ.get("GEMINI_API_KEY")
+if not api_key:
+    api_key = input("🔑 GEMINI_API_KEY not found in environment. Please enter your API key: ").strip()
+    if not api_key:
+        raise ValueError("An API key is required to run this script. Please obtain one at https://ai.google.dev/gemini-api/docs/api-key")
 
-# List of models to rotate through sequentially on Rate Limit (429), Model Not Found (404), or High Demand (503)
+# Initialize Gemini Client
+client = genai.Client(api_key=api_key)
+
+# Sequential Model Pool for Rate Limit (429), Not Found (404), or High Demand (503)
 MODELS = [
     "models/gemini-2.5-flash",
     "models/gemini-3.5-flash",
@@ -100,12 +108,7 @@ def split_scanned_pdf(input_pdf_path: str, sections_info: list[dict], temp_outpu
 def call_gemini_with_retry(contents, config=None, max_retries=20, initial_delay=15):
     """
     Calls Gemini API with exponential backoff and automatic model rotation.
-    Handles:
-      - 404 (Not Found / Deprecated): Switch model instantly without delay.
-      - 429 (Rate Limit): Switch model and wait exponential delay.
-      - 503 (Server High Demand / Unavailable): Switch model and wait brief delay.
-    
-    Option 2: Pauses for 10s if a full cycle through all models completes and wraps around to 0.
+    Handles 404, 429, and 503 errors across the model pool.
     """
     global current_model_idx
     delay = initial_delay
@@ -122,18 +125,15 @@ def call_gemini_with_retry(contents, config=None, max_retries=20, initial_delay=
 
         except ClientError as e:
             if e.code == 404:
-                # Model unavailable or deprecated; immediately switch without delay
                 current_model_idx = (current_model_idx + 1) % len(MODELS)
                 next_model = MODELS[current_model_idx]
                 print(f"❌ Model {active_model} returned 404 NOT_FOUND. Switching immediately to {next_model}...")
 
-                # Option 2: Check if cycle wrapped back to the start
                 if current_model_idx == 0:
                     print("⏳ Completed full model rotation. Pausing 10s before restarting queue...")
                     time.sleep(10)
 
             elif e.code == 429:
-                # Rate limited; switch model and apply backoff delay
                 current_model_idx = (current_model_idx + 1) % len(MODELS)
                 next_model = MODELS[current_model_idx]
                 print(f"⚠️ Rate limit hit (429) on {active_model}.")
@@ -141,7 +141,6 @@ def call_gemini_with_retry(contents, config=None, max_retries=20, initial_delay=
                 time.sleep(delay)
                 delay *= 2
 
-                # Option 2: Check if cycle wrapped back to the start
                 if current_model_idx == 0:
                     print("⏳ Completed full model rotation. Pausing 10s for quota recovery...")
                     time.sleep(10)
@@ -151,14 +150,12 @@ def call_gemini_with_retry(contents, config=None, max_retries=20, initial_delay=
 
         except ServerError as e:
             if e.code == 503:
-                # High traffic / server load on this specific model; switch and try another
                 current_model_idx = (current_model_idx + 1) % len(MODELS)
                 next_model = MODELS[current_model_idx]
                 print(f"🔥 Model {active_model} returned 503 UNAVAILABLE (High Demand).")
                 print(f"   🔄 Switching to {next_model}. Waiting 5s before retry ({attempt}/{max_retries})...")
                 time.sleep(5)
 
-                # Option 2: Check if cycle wrapped back to the start
                 if current_model_idx == 0:
                     print("⏳ Completed full model rotation. Pausing 10s for capacity reset...")
                     time.sleep(10)
@@ -278,50 +275,42 @@ def extract_qa_page_by_page(pdf_path: str, temp_page_dir: str) -> str:
 def create_telugu_pdf(text_content: str, output_pdf_path: str, font_path: str = "NotoSansTelugu-Regular.ttf", scale_factor: float = 1.80):
     """
     Generates a high-readability Telugu PDF formatted specifically for standard A4 paper printing.
-    Applies the scale_factor directly (Default 1.80 = 180% text scale up) to produce large, legible text natively.
+    Applies scale_factor directly to enlarge text natively.
     """
     if not os.path.exists(font_path):
         raise FileNotFoundError(f"Missing font file: {font_path}")
 
-    # Calculate scaled dimensions
-    base_font_size = 11.0 * scale_factor       # e.g., 11 * 1.8 = 19.8 pt
-    header_font_size = 12.0 * scale_factor     # e.g., 12 * 1.8 = 21.6 pt
-    line_height = 7.0 * scale_factor           # e.g., 7 * 1.8 = 12.6 mm
-    header_line_height = 8.0 * scale_factor    # e.g., 8 * 1.8 = 14.4 mm
+    # Scaled dimensions
+    base_font_size = 11.0 * scale_factor
+    header_font_size = 12.0 * scale_factor
+    line_height = 7.0 * scale_factor
+    header_line_height = 8.0 * scale_factor
 
-    # Standard A4 layout (210mm x 297mm)
     pdf = FPDF(orientation='P', unit='mm', format='A4')
-
-    # Print Margins
     pdf.set_margins(left=15, top=15, right=15)
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 
-    # Enable HarfBuzz complex script shaping for proper Telugu glyph rendering
     try:
         pdf.set_text_shaping(True)
     except Exception:
         pass
 
     pdf.add_font("TeluguFont", style="", fname=font_path)
-
-    # Base Font Size & Pure Black Ink
     pdf.set_font("TeluguFont", size=base_font_size)
     pdf.set_text_color(0, 0, 0)
 
     printable_width = pdf.epw
-
     lines = text_content.splitlines()
 
     for line in lines:
         clean_line = line.strip()
         if not clean_line:
-            pdf.ln(int(4 * scale_factor))  # Scaled paragraph gap
+            pdf.ln(int(4 * scale_factor))
             continue
 
         pdf.set_x(pdf.l_margin)
 
-        # Format Question Line
         if clean_line.startswith("ప్రశ్న:"):
             pdf.set_font("TeluguFont", size=base_font_size)
             pdf.ln(2)
@@ -329,13 +318,11 @@ def create_telugu_pdf(text_content: str, output_pdf_path: str, font_path: str = 
             pdf.multi_cell(printable_width, line_height, text=clean_line)
             pdf.ln(1)
 
-        # Format Answer Line
         elif clean_line.startswith("సమాధానం:"):
             pdf.set_font("TeluguFont", size=base_font_size)
             pdf.multi_cell(printable_width, line_height, text=clean_line)
             pdf.ln(2)
 
-        # Format Page/Section Markers
         elif clean_line.startswith("---"):
             pdf.set_font("TeluguFont", size=header_font_size)
             pdf.multi_cell(printable_width, header_line_height, text=clean_line)
@@ -375,7 +362,7 @@ def scale_docx_text(docx_path, scale_factor=1.80):
 
 
 def process_pdfs_via_docx(input_dir, output_dir, scale_factor=1.80):
-    """Converts PDFs to Word, scales text sizes, and exports back to PDF."""
+    """Option 3: Converts PDFs to Word, scales text sizes, and exports back to PDF."""
     if not DOCX_SUPPORT:
         print("❌ Error: 'pdf2docx', 'python-docx', or 'docx2pdf' missing. Please install them to use Option 3.")
         return
@@ -482,18 +469,30 @@ def process_directory_of_pdfs(input_dir: str, output_dir: str, temp_dir: str = "
         create_telugu_pdf(combined_qa, output_file_path, scale_factor=scale_factor)
 
 
+def compress_output_directory(target_dir: str) -> str:
+    """Compresses the output folder into a ZIP archive automatically."""
+    if not os.path.exists(target_dir):
+        raise FileNotFoundError(f"Directory '{target_dir}' does not exist.")
+
+    archive_base_name = f"{target_dir}_archive"
+    print(f"\n📦 Automatically compressing folder '{target_dir}' into ZIP...")
+    zip_path = shutil.make_archive(archive_base_name, 'zip', target_dir)
+    print(f"✅ Created ZIP file: {zip_path}")
+    return zip_path
+
+
 if __name__ == "__main__":
     # --- CONFIGURATION ---
     SCALE_FACTOR = 1.80  # 180% Font Scaling
 
-    # Mode 1 Defaults (Single PDF Section Processing)
+    # Mode 1 Defaults
     SINGLE_INPUT_PDF = "polity_1.pdf"
     SPLIT_SECTIONS_DIR = "temp_split_sections"
     SINGLE_OUTPUT_DIR = "test"
 
-    # Mode 2 & 3 Defaults (Directory Batch Processing)
-    INPUT_BATCH_DIR = r"D:\Repos\Python\human"
-    OUTPUT_BATCH_DIR = r"D:\Repos\Python\human_scale"
+    # Mode 2 & 3 Defaults
+    INPUT_BATCH_DIR = r"D:\Repos\Python\polity"
+    OUTPUT_BATCH_DIR = r"D:\Repos\Python\currentaffairs"
 
     print("Select Mode:")
     print("1. Section-based Q&A generation from a single PDF (Direct 180% Large-Text PDF)")
@@ -501,12 +500,21 @@ if __name__ == "__main__":
     print("3. External PDF-to-Word font scaling (pdf2docx -> DOCX 180% -> docx2pdf)")
 
     choice = input("Enter option (1, 2, or 3): ").strip()
+    target_output_dir = None
 
     if choice == "1":
+        target_output_dir = SINGLE_OUTPUT_DIR
         process_single_large_scanned_pdf(SINGLE_INPUT_PDF, SPLIT_SECTIONS_DIR, SINGLE_OUTPUT_DIR, scale_factor=SCALE_FACTOR)
     elif choice == "2":
+        target_output_dir = OUTPUT_BATCH_DIR
         process_directory_of_pdfs(INPUT_BATCH_DIR, OUTPUT_BATCH_DIR, scale_factor=SCALE_FACTOR)
     elif choice == "3":
+        target_output_dir = OUTPUT_BATCH_DIR
         process_pdfs_via_docx(INPUT_BATCH_DIR, OUTPUT_BATCH_DIR, scale_factor=SCALE_FACTOR)
     else:
         print("Invalid choice selected. Exiting.")
+        exit()
+
+    # Automatically compress output directory without prompting
+    if target_output_dir:
+        compress_output_directory(target_output_dir)
