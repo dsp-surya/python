@@ -5,6 +5,7 @@ import time
 import glob
 import logging
 import shutil
+import uuid
 
 # Suppress root logger and all Google / HTTP client sub-loggers
 logging.basicConfig(level=logging.WARNING)
@@ -60,7 +61,7 @@ def sanitize_filename(name: str) -> str:
 
 
 def load_sections_config(config_path: str = "sections.json") -> list[dict] | None:
-    """Checks for a manual 'sections.json' file first to avoid AI guessing errors."""
+    """Checks for a manual section JSON file first to avoid AI guessing errors."""
     if os.path.exists(config_path):
         print(f"🎯 Found manual section map '{config_path}'. Bypassing AI visual scanning!")
         with open(config_path, "r", encoding="utf-8") as f:
@@ -406,15 +407,15 @@ def process_pdfs_via_docx(input_dir, output_dir, scale_factor=1.80):
     print("All PDFs processed successfully!")
 
 
-def process_single_large_scanned_pdf(input_pdf: str, temp_split_dir: str, final_qa_dir: str, scale_factor: float = 1.80):
-    """Option 1: Split a single PDF into section-based Q&A PDFs."""
+def process_single_large_scanned_pdf(input_pdf: str, temp_split_dir: str, final_qa_dir: str, config_path: str = "sections.json", scale_factor: float = 1.80):
+    """Option 1: Split a single PDF into section-based Q&A PDFs using a custom or default JSON config."""
     os.makedirs(final_qa_dir, exist_ok=True)
     temp_page_dir = os.path.join(temp_split_dir, "single_pages")
 
-    sections_info = load_sections_config("sections.json")
+    sections_info = load_sections_config(config_path)
 
     if not sections_info:
-        print("🔍 No manual 'sections.json' found. Running Gemini visual layout scan...")
+        print(f"🔍 No manual configuration found at '{config_path}'. Running Gemini visual layout scan...")
         sections_info = find_sections_with_gemini(input_pdf)
         save_sections_metadata(sections_info, temp_split_dir)
 
@@ -438,7 +439,7 @@ def process_single_large_scanned_pdf(input_pdf: str, temp_split_dir: str, final_
         create_telugu_pdf(combined_qa, output_path, scale_factor=scale_factor)
 
 
-def process_directory_of_pdfs(input_dir: str, output_dir: str, temp_dir: str = "temp_batch_pages", scale_factor: float = 1.80):
+def process_directory_of_pdfs(input_dir: str, output_dir: str, temp_dir: str, scale_factor: float = 1.80):
     """Option 2: Process all PDFs in input_dir page-by-page and create matching output PDFs."""
     if not os.path.exists(input_dir):
         print(f"❌ Input directory '{input_dir}' does not exist.")
@@ -484,15 +485,11 @@ def compress_output_directory(target_dir: str) -> str:
 if __name__ == "__main__":
     # --- CONFIGURATION ---
     SCALE_FACTOR = 1.80  # 180% Font Scaling
-
-    # Mode 1 Defaults
-    SINGLE_INPUT_PDF = "polity_1.pdf"
-    SPLIT_SECTIONS_DIR = "temp_split_sections"
-    SINGLE_OUTPUT_DIR = "test"
-
-    # Mode 2 & 3 Defaults
-    INPUT_BATCH_DIR = r"D:\Repos\Python\polity"
-    OUTPUT_BATCH_DIR = r"D:\Repos\Python\currentaffairs"
+    
+    # Generate unique suffix using timestamp and UUID to safely handle multi-user execution
+    unique_session_id = f"{int(time.time())}_{uuid.uuid4().hex[:6]}"
+    SPLIT_SECTIONS_DIR = f"temp_split_sections_{unique_session_id}"
+    BATCH_TEMP_DIR = f"temp_batch_pages_{unique_session_id}"
 
     print("Select Mode:")
     print("1. Section-based Q&A generation from a single PDF (Direct 180% Large-Text PDF)")
@@ -503,14 +500,49 @@ if __name__ == "__main__":
     target_output_dir = None
 
     if choice == "1":
-        target_output_dir = SINGLE_OUTPUT_DIR
-        process_single_large_scanned_pdf(SINGLE_INPUT_PDF, SPLIT_SECTIONS_DIR, SINGLE_OUTPUT_DIR, scale_factor=SCALE_FACTOR)
+        # Dynamic inputs for Mode 1
+        single_input_pdf = input("Enter path to input PDF file [Default: polity_1.pdf]: ").strip()
+        if not single_input_pdf:
+            single_input_pdf = "polity_1.pdf"
+
+        target_output_dir = input("Enter output directory for generated PDFs [Default: test]: ").strip()
+        if not target_output_dir:
+            target_output_dir = "test"
+
+        custom_config = input("Enter path to sections JSON file [Default: sections.json]: ").strip()
+        if not custom_config:
+            custom_config = "sections.json"
+
+        process_single_large_scanned_pdf(
+            single_input_pdf, 
+            SPLIT_SECTIONS_DIR, 
+            target_output_dir, 
+            config_path=custom_config, 
+            scale_factor=SCALE_FACTOR
+        )
+
     elif choice == "2":
-        target_output_dir = OUTPUT_BATCH_DIR
-        process_directory_of_pdfs(INPUT_BATCH_DIR, OUTPUT_BATCH_DIR, scale_factor=SCALE_FACTOR)
+        # Dynamic inputs for Mode 2
+        input_batch_dir = input("Enter input folder path containing PDFs: ").strip()
+        target_output_dir = input("Enter output folder path for processed PDFs: ").strip()
+
+        if not input_batch_dir or not target_output_dir:
+            print("❌ Input and output folders are required for batch processing. Exiting.")
+            exit()
+
+        process_directory_of_pdfs(input_batch_dir, target_output_dir, temp_dir=BATCH_TEMP_DIR, scale_factor=SCALE_FACTOR)
+
     elif choice == "3":
-        target_output_dir = OUTPUT_BATCH_DIR
-        process_pdfs_via_docx(INPUT_BATCH_DIR, OUTPUT_BATCH_DIR, scale_factor=SCALE_FACTOR)
+        # Dynamic inputs for Mode 3
+        input_batch_dir = input("Enter input folder path containing PDFs: ").strip()
+        target_output_dir = input("Enter output folder path for processed PDFs: ").strip()
+
+        if not input_batch_dir or not target_output_dir:
+            print("❌ Input and output folders are required for batch processing. Exiting.")
+            exit()
+
+        process_pdfs_via_docx(input_batch_dir, target_output_dir, scale_factor=SCALE_FACTOR)
+
     else:
         print("Invalid choice selected. Exiting.")
         exit()
